@@ -1,0 +1,16 @@
+.DS_Store
+__pycache__/
+*.pyc
+
+# Local secrets
+seedance.env
+*.env
+!.env.example
+
+# Generated outputs and large local media
+outputs/
+*.mp4
+*.mov
+*.m4v
+*.avi
+*.mkv

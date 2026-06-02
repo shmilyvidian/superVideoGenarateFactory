@@ -1,0 +1,6 @@
+interface:
+  display_name: "Douyin Video Replication"
+  short_description: "一比一复刻对标视频，生成分镜和 Seedance 提示词，可接自己的 API key"
+  default_prompt: "Use $douyin-video-replication to analyze this benchmark video, replace only the product, enforce product fidelity/no deformation, generate actual storyboard images with Codex image generation, QC them cell by cell, and produce Seedance-ready ecommerce video prompts. If I have configured my own Seedance/Ark API key, optionally submit the final video task through the API."
+policy:
+  allow_implicit_invocation: true
