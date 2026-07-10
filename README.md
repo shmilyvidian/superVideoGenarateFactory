@@ -5,7 +5,7 @@
 它支持三条视频生产链路：
 
 1. **复刻链路**：上传对标视频和产品图，Codex 拆解镜头、文案和节奏，再替换成你的产品生成分镜和 Seedance 2.0 视频。
-2. **强 Hook 九宫格生成出片链路**：输入商品信息、卖点、目标人群和产品图，Codex 根据 `prompt_image.md` 生成强 Hook 九宫格脚本，再调用 image2 生成 9 帧分镜图，最后调用 Seedance 2.0 出片。
+2. **强 Hook 九宫格生成出片链路**：输入商品信息、卖点、目标人群和产品图，Codex 根据 `prompt_image.md` 生成强 Hook 九宫格脚本，再逐帧调用 `scripts/xborder_image.py`（X-Border 中转，零 key）生成 9 帧分镜图，最后调用 Seedance 2.0 出片。
 3. **九宫格成片直投链路**：你已经有 9 帧分镜图和 9 段提示词时，Codex 跳过脚本和 image2，直接整理 Seedance 2.0 提示词并出片。
 
 ## 目录结构
@@ -22,10 +22,6 @@
     ├── install_windows.bat
     ├── install_windows.ps1
     ├── check_install.sh
-    ├── setup_seedance_key.sh
-    ├── setup_seedance_key_windows.ps1
-    ├── secrets/
-    │   └── seedance.env.example
     └── douyin-video-replication/
         ├── SKILL.md
         ├── scripts/
@@ -64,33 +60,15 @@ cd douyin-video-replication-share-kit-api-ready
 powershell -NoProfile -ExecutionPolicy Bypass -File .\install_windows.ps1
 ```
 
-## 配置 Seedance API Key
+## X-Border 中转（零 key）
 
-这个仓库 **不会包含真实 API key**。
+无需配置任何 API key。模型通过 X-Border 中转调用，Provider key 由 Worker 服务端持有。
 
-如果需要自动调用 Seedance 2.0 出片，请在自己的电脑上配置私密 key：
-
-### macOS / Linux
+中转地址默认为 `https://n11-server.lfy071.workers.dev`，可通过环境变量 `XBORDER_RELAY_URL` 覆盖：
 
 ```bash
-cd douyin-video-replication-share-kit-api-ready
-./setup_seedance_key.sh
+export XBORDER_RELAY_URL=https://my-relay.example.workers.dev
 ```
-
-### Windows
-
-```powershell
-cd douyin-video-replication-share-kit-api-ready
-powershell -NoProfile -ExecutionPolicy Bypass -File .\setup_seedance_key_windows.ps1
-```
-
-脚本会把 key 写到本机私密文件：
-
-```text
-~/.codex/secrets/seedance.env
-```
-
-请不要把真实 `seedance.env`、`ARK_API_KEY` 或任何密钥上传到 GitHub、发给别人或放进压缩包。
 
 ## 使用说明
 
@@ -165,7 +143,5 @@ Seedance 出片支持 `audio_mode`：
 
 ## 安全说明
 
-- 仓库只包含 `secrets/seedance.env.example` 占位示例。
-- 不要提交真实 `seedance.env`。
-- 不要在 Markdown、脚本、测试或 issue/PR 中粘贴真实 key。
-- 如果 key 曾经出现在聊天、截图或日志中，建议在火山方舟后台轮换新 key。
+- 模型经 X-Border 中转调用，用户侧无 key，无需保管任何密钥。
+- 不要在 Markdown、脚本、测试或 issue/PR 中粘贴任何密钥。

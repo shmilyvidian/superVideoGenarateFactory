@@ -3,7 +3,6 @@ set -euo pipefail
 
 CODEX_DIR="${CODEX_HOME:-"$HOME/.codex"}"
 DEST="$CODEX_DIR/skills/douyin-video-replication"
-SECRET_FILE="$CODEX_DIR/secrets/seedance.env"
 
 fail() {
   echo "检查失败：$1" >&2
@@ -13,6 +12,8 @@ fail() {
 [ -f "$DEST/SKILL.md" ] || fail "没有找到已安装的 SKILL.md：$DEST/SKILL.md"
 [ -d "$DEST/references" ] || fail "缺少 references/"
 [ -d "$DEST/scripts" ] || fail "缺少 scripts/"
+[ -f "$DEST/scripts/seedance_submit.py" ] || fail "缺少 scripts/seedance_submit.py"
+[ -f "$DEST/scripts/xborder_image.py" ] || fail "缺少 scripts/xborder_image.py"
 
 python_bin=""
 for candidate in python3 python; do
@@ -26,7 +27,8 @@ done
 
 "$python_bin" -m py_compile \
   "$DEST/scripts/extract_copy_review_frames.py" \
-  "$DEST/scripts/seedance_submit.py"
+  "$DEST/scripts/seedance_submit.py" \
+  "$DEST/scripts/xborder_image.py"
 
 tmp_dir="$(mktemp -d)"
 trap 'rm -rf "$tmp_dir"' EXIT
@@ -51,11 +53,8 @@ PY
 
 [ -f "$tmp_dir/grid-out/request.redacted.json" ] || fail "九宫格直出请求格式 dry-run 没有生成预览文件"
 
-if [ -f "$SECRET_FILE" ] && grep -q '^ARK_API_KEY=.' "$SECRET_FILE"; then
-  echo "API key 状态：已配置本机私密 key。"
-else
-  echo "API key 状态：未配置；仍可手动使用分镜图和提示词出片。"
-fi
+echo "API key 状态：X-Border 中转模式，零 key，无需配置。"
+echo "中转地址：${XBORDER_RELAY_URL:-https://n11-server.lfy071.workers.dev}"
 
 if command -v ffmpeg >/dev/null 2>&1; then
   echo "ffmpeg 状态：已安装。"

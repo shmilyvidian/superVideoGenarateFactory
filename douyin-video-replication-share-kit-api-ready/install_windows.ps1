@@ -5,7 +5,6 @@ $CodexDir = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $env:USERP
 $Src = Join-Path $PackageDir "douyin-video-replication"
 $DestRoot = Join-Path $CodexDir "skills"
 $Dest = Join-Path $DestRoot "douyin-video-replication"
-$SecretFile = Join-Path $CodexDir "secrets\seedance.env"
 
 function Fail($Message) {
   Write-Host "安装失败：$Message" -ForegroundColor Red
@@ -52,7 +51,8 @@ if (-not $Python) {
 
 & $Python -m py_compile `
   (Join-Path $Dest "scripts\extract_copy_review_frames.py") `
-  (Join-Path $Dest "scripts\seedance_submit.py")
+  (Join-Path $Dest "scripts\seedance_submit.py") `
+  (Join-Path $Dest "scripts\xborder_image.py")
 if ($LASTEXITCODE -ne 0) {
   Fail "Python 脚本语法检查失败"
 }
@@ -111,11 +111,8 @@ try {
   Write-Host "提醒：没有检测到 ffmpeg。主流程可以安装，但本地视频抽帧会受影响。"
 }
 
-if ((Test-Path $SecretFile) -and (Select-String -Path $SecretFile -Pattern '^ARK_API_KEY=.' -Quiet)) {
-  Write-Host "已检测到本机私密 Seedance API 配置：$SecretFile"
-} else {
-  Write-Host "未检测到 Seedance API key。可以先手动使用提示词出片；如需 API 自动出片，请运行 setup_seedance_key_windows.ps1。"
-}
+Write-Host "视频和图片生成均通过 X-Border 中转调用，无需配置 API key。"
+Write-Host "中转地址默认 https://n11-server.lfy071.workers.dev；可通过 XBORDER_RELAY_URL 覆盖。"
 
 Write-Host ""
 Write-Host "安装和自检通过。" -ForegroundColor Green

@@ -1,73 +1,100 @@
-# Seedance 2.0 API Integration
+# X-Border 中转 API 契约
 
-Use this reference when the user asks Codex to generate the final Seedance video through the API, not only write prompts.
+模型经 X-Border 中转调用,零 key。用户无需配置任何 Provider 密钥,无需申请 Volcano Ark 账号。
 
-This shared package does not include any API key. API generation only works after the recipient configures their own Seedance/Volcano Ark key locally. Without a key, complete the normal workflow by delivering storyboard images and Seedance prompts for manual upload/generation.
+中转 Worker 地址:`https://n11-server.lfy071.workers.dev`
 
-For 九宫格直出链路, also load `references/grid-to-video-workflow.md`. Submit with `--reference-mode grid-storyboard` so the request prompt uses the nine-grid contract instead of the replication product-image/storyboard split.
+可通过环境变量 `XBORDER_RELAY_URL` 或脚本参数 `--base-url` 覆盖默认地址。
 
-## Security
+---
 
-- Never write the Ark API key into `SKILL.md`, prompt files, generated reports, Git commits, or shared outputs.
-- Never include a real `seedance.env` file or real API key in a ZIP, GitHub repo, copied skill folder, or shared team package.
-- `scripts/seedance_submit.py` reads `ARK_API_KEY` from the environment, from a private env file passed by `--env-file`, or automatically from `$HOME/.codex/secrets/seedance.env` when that file exists.
-- Recommended private env file path: `$HOME/.codex/secrets/seedance.env`.
-- The env file must contain `ARK_API_KEY=...`.
-- Optional env overrides:
-  - `ARK_BASE_URL=https://ark.cn-beijing.volces.com`
-  - `SEEDANCE_MODEL=doubao-seedance-2-0-260128`
-- Each recipient must use their own account/API key. Do not share a root/master key.
-- Model IDs, durations, account permissions, quota, and regional routes can change. If API calls fail, check the current Volcano Ark/Seedance documentation and the recipient account's enabled models before editing the workflow.
+## 视频生成接口
 
-## API Shape
+### 创建任务
 
-- Create task: `POST https://ark.cn-beijing.volces.com/api/v3/contents/generations/tasks`
-- Query task: `GET https://ark.cn-beijing.volces.com/api/v3/contents/generations/tasks/{id}`
-- Default model: `doubao-seedance-2-0-260128`
-- Use `Authorization: Bearer $ARK_API_KEY`.
-- If the account is using another Ark/ModelArk route, set `ARK_BASE_URL` and `SEEDANCE_MODEL` in the private env file instead of editing the skill.
-- Use `content` with one text item plus image items.
-- For Seedance 2.0 multimodal reference video generation, pass all product images first and the storyboard image last, each image item with `role: "reference_image"`.
-- Use `ratio: "9:16"`, `duration: 15` or the segment duration, `resolution: "720p"` by default, and `watermark: false`.
-- Audio is controlled by `--audio-mode`: `silent`, `ambient`, `music`, `voiceover`, or `full`. Default is `ambient`, which sets `generate_audio: true` and asks for realistic environment/action sound. Use `silent` only when the user explicitly wants no sound.
-- Use `--reference-audio-url` when the user provides reference music/audio; the script passes it as `{"type":"audio_url","role":"reference_audio"}`.
+```
+POST {relay}/video/seedance/tasks
+```
 
-## Reference Image Order
+请求体与原 Seedance 2.0 content 格式相同(文本 + 图片 reference_image 列表);中转 Worker 在服务端注入 Provider key,客户端无需传 `Authorization` header。
 
-For a normal replication run:
+### 查询任务
 
-1. Product image 1
-2. Product image 2
-3. Product image 3, if provided
-4. More product images, if provided
-5. Current segment storyboard image
+```
+GET {relay}/video/seedance/tasks/{id}
+```
 
-The prompt should name this order plainly. Product images are the only product appearance source. The storyboard image locks shot order, composition, scene, light, hand/foot style, and action rhythm only.
+轮询直至 `status` 变为 `succeeded`(或失败);中转 Worker 透传 Ark 任务状态。
 
-## Identity-Detail-Deficient Storyboard Handling
+---
 
-If the generated storyboard has missing, unclear, or misplaced product identity details but the user still wants to test Seedance API generation with their own configured API key:
+## 分镜图生成接口
 
-- Do not call the storyboard product-fidelity-passed.
-- Submit it only as a structure reference.
-- Prepend the generic product appearance lock block through `scripts/seedance_submit.py` default behavior.
-- Add a product-specific lock with `--product-lock` or `--product-lock-file` when the product has details that need stronger wording, such as visible logo/mark, pendant/clasp, gemstone, bottle cap/nozzle, label, screen, button, packaging structure, or distinctive texture.
-- In the Seedance prompt, explicitly state that the storyboard's missing, unclear, misplaced, wrong-scale, wrong-material, wrong-color, or wrong-category product details are storyboard errors and must not be inherited.
-- Final video product identity/logo QC becomes the hard P0 gate. If any shot that should show a product identity detail lacks it or moves it to the wrong surface, the final video fails.
+```
+POST {relay}/image/ecom/edit
+```
 
-The script prepends a default generic product-lock block unless `--no-product-lock-prefix` is set. Do not disable this for identity-sensitive products.
+- 默认模型:`seedream-4.5`
+- 推荐比例:`--scale 9:16`
+- 支持多个 `--reference-image`(产品图 + 可选上一帧)
 
-## Example
+---
+
+## Reference Image 顺序(视频)
+
+普通复刻链路:
+
+1. 产品图 1
+2. 产品图 2
+3. 产品图 3(若有)
+4. 更多产品图(若有)
+5. 当前段分镜图
+
+prompt 里应明确说明图片顺序。产品图是产品外观的唯一来源,分镜图只锁构图和场景。
+
+---
+
+## 示例命令
+
+### 分镜图生成(逐帧调用 xborder_image.py)
 
 ```bash
-python3 $HOME/.codex/skills/douyin-video-replication/scripts/seedance_submit.py \
+python3 scripts/xborder_image.py \
+  --prompt "产品白底展示图，突出瓶身曲线" \
+  --reference-image inputs/product_images/product_front.jpg \
+  --scale 9:16 \
+  --output outputs/storyboard_images/frame_01.png
+```
+
+加上前一帧作参考(保持风格连续性):
+
+```bash
+python3 scripts/xborder_image.py \
+  --prompt "手持产品特写，展示瓶盖细节" \
+  --reference-image inputs/product_images/product_front.jpg \
+  --reference-image outputs/storyboard_images/frame_01.png \
+  --scale 9:16 \
+  --output outputs/storyboard_images/frame_02.png
+```
+
+覆盖中转地址:
+
+```bash
+XBORDER_RELAY_URL=https://my-relay.example.workers.dev \
+python3 scripts/xborder_image.py --prompt "..." --reference-image product.jpg --output frame.png
+```
+
+### 视频提交(seedance_submit.py,无 --env-file)
+
+普通复刻:
+
+```bash
+python3 scripts/seedance_submit.py \
   --prompt-file outputs/seedance_video_prompts.md \
   --reference-image inputs/product_images/4X6A0367.JPG \
   --reference-image inputs/product_images/4X6A0400.JPG \
-  --reference-image inputs/product_images/4X6A0471.JPG \
   --reference-image outputs/storyboard_images/storyboard_01.png \
-  --reference-note "@图片1-3=产品图，@图片4=分镜图。产品图锁外观，分镜图只锁镜头结构。" \
-  --product-lock-file internal/product_lock.md \
+  --reference-note "@图片1-2=产品图，@图片3=分镜图。产品图锁外观，分镜图只锁镜头结构。" \
   --output-dir outputs/seedance \
   --duration 15 \
   --ratio 9:16 \
@@ -76,12 +103,10 @@ python3 $HOME/.codex/skills/douyin-video-replication/scripts/seedance_submit.py 
   --poll
 ```
 
-Use `--dry-run` first when validating the payload without spending credits. A dry run does not prove the API key, quota, model access, or account permissions; confirm those with one low-cost real generation on the recipient machine.
-
-## Nine-Grid Direct Example
+九宫格直出:
 
 ```bash
-python3 $HOME/.codex/skills/douyin-video-replication/scripts/seedance_submit.py \
+python3 scripts/seedance_submit.py \
   --prompt-file outputs/nine_grid_seedance_prompt.md \
   --reference-image inputs/storyboard_grid.png \
   --reference-mode grid-storyboard \
@@ -94,24 +119,35 @@ python3 $HOME/.codex/skills/douyin-video-replication/scripts/seedance_submit.py 
   --dry-run
 ```
 
-## Audio Mode Examples
-
-Environment/action sound only:
+覆盖中转地址:
 
 ```bash
-python3 $HOME/.codex/skills/douyin-video-replication/scripts/seedance_submit.py \
-  --prompt-file outputs/seedance_video_prompts.md \
-  --reference-image outputs/storyboard_images/frame_01.png \
-  --output-dir outputs/seedance \
-  --duration 9 \
-  --audio-mode ambient \
+XBORDER_RELAY_URL=https://my-relay.example.workers.dev \
+python3 scripts/seedance_submit.py \
+  --prompt "测试" \
+  --reference-image frame.png \
+  --output-dir out \
   --dry-run
 ```
 
-Voiceover, music, and environment/action sound:
+先 dry-run 确认请求格式,再去掉 `--dry-run` 正式提交。
+
+---
+
+## 声音配置
+
+通过 `--audio-mode` 控制:
+
+- `silent`:关闭生成音频
+- `ambient`(默认):真实环境音 + 动作音效,无人声,无背景音乐
+- `music`:环境音 + 动作音效 + 背景音乐
+- `voiceover`:环境音 + 动作音效 + 人声口播
+- `full`:环境音 + 动作音效 + 背景音乐 + 人声口播
+
+有参考音频时使用 `--reference-audio-url`:
 
 ```bash
-python3 $HOME/.codex/skills/douyin-video-replication/scripts/seedance_submit.py \
+python3 scripts/seedance_submit.py \
   --prompt-file outputs/seedance_video_prompts.md \
   --reference-image outputs/storyboard_images/frame_01.png \
   --reference-audio-url "https://example.com/reference-music.mp3" \
@@ -121,3 +157,23 @@ python3 $HOME/.codex/skills/douyin-video-replication/scripts/seedance_submit.py 
   --audio-instruction "女生音色，轻快广告音乐，保留真实动作音效。" \
   --dry-run
 ```
+
+---
+
+## 身份细节缺失分镜的处理
+
+如果生成分镜图中产品身份细节缺失/模糊/错位,但用户仍想测试 Seedance 出片:
+
+- 不要将该分镜标记为产品保真通过。
+- 通过 `scripts/seedance_submit.py` 的默认行为在 prompt 前置通用产品外观锁定块。
+- 对需要更强措辞的产品使用 `--product-lock` 或 `--product-lock-file`。
+- Seedance prompt 中明确声明分镜图里的产品细节错误不得被继承。
+- 最终视频产品身份/logo QC 仍是 P0 硬门槛。
+
+脚本默认前置通用产品锁定块,除非加 `--no-product-lock-prefix`。对身份敏感产品不要关闭此开关。
+
+---
+
+## 九宫格直出参考
+
+同样走中转,无需 key。使用 `--reference-mode grid-storyboard`。详见 `references/grid-to-video-workflow.md`。

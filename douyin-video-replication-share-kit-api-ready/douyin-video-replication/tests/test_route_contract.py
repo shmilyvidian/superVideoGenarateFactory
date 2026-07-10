@@ -101,3 +101,14 @@ class RouteContractTest(unittest.TestCase):
             prompt = payload["content"][0]["text"]
 
         self.assertIn("【通用产品外观硬约束】", prompt)
+
+    def test_no_key_setup_leftovers(self):
+        kit_root = SKILL_ROOT.parent  # share-kit 根 (douyin-video-replication-share-kit-api-ready/)
+        skill_md = (SKILL_ROOT / "SKILL.md").read_text(encoding="utf-8")
+        api_md = (SKILL_ROOT / "references" / "seedance-api.md").read_text(encoding="utf-8")
+        self.assertNotIn("ARK_API_KEY", skill_md)
+        self.assertNotIn("ARK_API_KEY", api_md)
+        self.assertNotIn("seedance.env", skill_md)
+        self.assertIn("xborder_image.py", skill_md)
+        self.assertFalse((kit_root / "setup_seedance_key.sh").exists())
+        self.assertFalse((kit_root / "secrets").exists())

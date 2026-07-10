@@ -1,18 +1,18 @@
 ---
 name: douyin-video-replication
-description: Use this skill for Douyin ecommerce information-feed video workflows, including competitor video replication, strong-Hook nine-grid prompt_image.md to image2 storyboard generation, nine-frame direct Seedance submission, product-fidelity locked storyboards, Seedance 2.0 prompts, and optional API submission only with the user's configured key.
+description: Use this skill for Douyin ecommerce information-feed video workflows, including competitor video replication, strong-Hook nine-grid prompt_image.md to image2 storyboard generation, nine-frame direct Seedance submission, product-fidelity locked storyboards, Seedance 2.0 prompts, and API submission via the X-Border relay (zero key required).
 ---
 
 # Douyin Video Replication
 
-This skill runs the user's Douyin ecommerce information-feed video workflow. Use it when the user wants to analyze a benchmark short video, replace the product, generate actual storyboard images from `prompt_image.md` with image2, turn user-provided nine-frame storyboards into a final video, generate Seedance 2.0 prompts, optionally submit Seedance API generation tasks with their own locally configured API key, or consolidate results into Feishu.
+This skill runs the user's Douyin ecommerce information-feed video workflow. Use it when the user wants to analyze a benchmark short video, replace the product, generate actual storyboard images from `prompt_image.md` via `scripts/xborder_image.py`, turn user-provided nine-frame storyboards into a final video, generate Seedance 2.0 prompts, submit Seedance API generation tasks through the X-Border relay (zero key required), or consolidate results into Feishu.
 
 ## Route Selection
 
 Before starting, choose exactly one route from the user's input.
 
-- 复刻链路: use the benchmark video as the source of shot order, timing, scenes, actions, copy rhythm, and composition. Generate storyboard images first, then generate Seedance prompts, and only call the API when the user's private key is configured.
-- 强 Hook 九宫格生成出片链路: use when the user gives product information, selling points, target audience, product images, or says to use `prompt_image.md`/Codex instead of Gemini to generate nine-grid prompts. Codex reads bundled `references/prompts/00-prompt-image.md` or the workspace `prompt_image.md` when the user explicitly points to it, generates a strong-Hook nine-grid Chinese storyboard script, waits for user confirmation, generates 9 image2 prompts, calls image2 to create 9 storyboard frames, then writes the Seedance/C端2.0 prompt and optionally calls Seedance. The expected handoff is `prompt_image.md` → image2 → Seedance, with 9帧分镜图 + 9段提示词 retained as core artifacts.
+- 复刻链路: use the benchmark video as the source of shot order, timing, scenes, actions, copy rhythm, and composition. Generate storyboard images first, then generate Seedance prompts, and submit via the X-Border relay (模型经 X-Border 中转,零 key).
+- 强 Hook 九宫格生成出片链路: use when the user gives product information, selling points, target audience, product images, or says to use `prompt_image.md`/Codex instead of Gemini to generate nine-grid prompts. Codex reads bundled `references/prompts/00-prompt-image.md` or the workspace `prompt_image.md` when the user explicitly points to it, generates a strong-Hook nine-grid Chinese storyboard script, waits for user confirmation, generates 9 image2 prompts, calls `scripts/xborder_image.py` to create 9 storyboard frames (逐帧调用,传产品图 +(可选)上一帧), then writes the Seedance/C端2.0 prompt and optionally calls Seedance via the X-Border relay. The expected handoff is `prompt_image.md` → image2 → `xborder_image.py` → Seedance, with 9帧分镜图 + 9段提示词 retained as core artifacts.
 - 九宫格成片直投链路: use when the user uploads 9 storyboard frames and 9 prompts that were already produced from the `prompt_image.md` system. Skip script generation and image2. Use the provided 9帧分镜图 + 9段提示词 to write the final Seedance/C端2.0 prompt, then optionally submit it through the API.
 - If the input contains a benchmark/competitor video, route to 复刻链路. If the input lacks a benchmark video and asks Codex to create the nine-grid prompts/images, route to 强 Hook 九宫格生成出片链路. If the input already contains 9 frames plus 9 prompts, route to 九宫格成片直投链路.
 - If multiple route signals are present, ask which route to use unless the user explicitly names one route.
@@ -24,7 +24,7 @@ Before starting, choose exactly one route from the user's input.
 - Product images lock product appearance, structure, color, material, texture, logo/mark position, logo/mark size, logo/mark color, logo/mark direction, and any visible product-specific details.
 - Do not solve logo/text risk by removing or weakening the product identity. If the product has a visible logo/mark in the product images and the benchmark shot angle should show that product area, the storyboard must preserve it in the physically correct position and scale.
 - Storyboard images are mandatory final deliverables for replication runs unless the user explicitly asks for prompts only. For 强 Hook 九宫格生成出片链路, image2-generated 9-frame storyboards are mandatory. For 九宫格成片直投链路, the user-provided 9 frames are the storyboard images and do not need to be regenerated unless the user asks.
-- Use Codex's built-in GPT image/image2 generation capability to create the storyboard images; do not stop at storyboard prompt text.
+- Use `scripts/xborder_image.py` to create storyboard images by calling the X-Border relay (逐帧调用,传产品图 +(可选)上一帧); do not stop at storyboard prompt text.
 - Storyboard images lock visual structure, shot order, scene continuity, product placement, and repeated people/hand/background style.
 - Original video breakdown locks timecodes, shot sequence, actions, and scene details.
 - Rewritten copy locks voiceover rhythm and conversion path.
@@ -55,7 +55,7 @@ For 复刻链路, final user-facing delivery should contain only:
 - The actual generated storyboard image file(s), one image per planned Seedance segment.
 - The rewritten imitation copy/script, aligned to the final storyboard order.
 - The final Seedance 2.0 video generation prompt(s), one prompt per storyboard image/segment.
-- If the user has configured their own Seedance/Ark API key and asks Codex to generate video through the API: the downloaded Seedance MP4 file(s) and the video QC result.
+- If the user asks Codex to generate video through the API via the X-Border relay: the downloaded Seedance MP4 file(s) and the video QC result.
 
 Keep breakdowns, copy extraction, script framework, replication blueprint, copy rewrite, OCR sheets, and frame reviews as internal working material. Do not surface them in the final response unless the user explicitly asks for the full analysis, debug evidence, Feishu writeback, or a reusable archive.
 
@@ -65,14 +65,14 @@ For 强 Hook 九宫格生成出片链路, final user-facing delivery should cont
 - The 9 image2 prompts/JSON, including voiceover fields when present.
 - The generated 9 storyboard frames and optional 3x3 overview grid.
 - The final Seedance/C端2.0 video generation prompt generated from the 9 storyboard frames and 9 prompts.
-- If API generation is requested and the user's private key is configured: the downloaded Seedance MP4 file and the video QC result.
-- If no API key is configured: the 9 frames, 9 prompts, final Seedance prompt, and exact reference-image order for manual C端2.0/Seedance upload.
+- If API generation is requested: the downloaded Seedance MP4 file and the video QC result (submitted via the X-Border relay, 零 key).
+- If the user only wants prompts: the 9 frames, 9 prompts, final Seedance prompt, and exact reference-image order for manual C端2.0/Seedance upload.
 
 For 九宫格成片直投链路, final user-facing delivery should contain only:
 
 - The final Seedance/C端2.0 video generation prompt generated from the user-provided 9 frames and 9 prompts.
-- If API generation is requested and the user's private key is configured: the downloaded Seedance MP4 file and the video QC result.
-- If no API key is configured: the prompt and exact reference-image order for manual C端2.0/Seedance upload.
+- If API generation is requested: the downloaded Seedance MP4 file and the video QC result (submitted via the X-Border relay, 零 key).
+- If the user only wants a prompt: the prompt and exact reference-image order for manual C端2.0/Seedance upload.
 
 Do not surface replication-only breakdown artifacts during 强 Hook 九宫格生成出片链路 or 九宫格成片直投链路 because they are not part of those routes.
 
@@ -112,11 +112,11 @@ For 九宫格成片直投链路, ask for or locate these inputs:
 6. Run copy rewrite with `references/prompts/05-copy-rewrite.md`.
 7. Run storyboard image prompt generation with `references/prompts/06-storyboard-prompt.md`.
 8. Before generating storyboard images, build an internal product-fidelity contract from the product images and notes: product category, shape, color, length/proportion, material/texture, structure, seams, special panels, logo/mark/text/pattern position, logo/mark/text/pattern size, logo/mark/text/pattern color, logo/mark/text/pattern direction, and any category-specific identity details such as pendant, clasp, gemstone, connector, label, packaging, screen, button, cap, nozzle, or texture. Use `references/product-fidelity-gate.md`.
-9. Generate every actual storyboard image planned by the blueprint in the same run with Codex image generation, not only the first one. If the blueprint plans 2 storyboards, generate 2 images; if it plans 3 storyboards, generate 3 images. The generated image count must equal the storyboard count. If a storyboard contains a visible person or KOC/口播 character, generate sequentially: create and save storyboard 1 first, then generate storyboard 2+ using the product image(s) and the actual generated storyboard 1 as visual/style references when the image tool supports references. Do not treat text-only "continue the same person" as sufficient if the tool supports image references.
+9. Generate every actual storyboard image planned by the blueprint in the same run using `scripts/xborder_image.py` (X-Border relay, 零 key), not only the first one. If the blueprint plans 2 storyboards, generate 2 images; if it plans 3 storyboards, generate 3 images. The generated image count must equal the storyboard count. If a storyboard contains a visible person or KOC/口播 character, generate sequentially: create and save storyboard 1 first, then generate storyboard 2+ using the product image(s) and the actual generated storyboard 1 as `--reference-image` inputs to `scripts/xborder_image.py`. Do not treat text-only "continue the same person" as sufficient if the tool supports image references.
 10. After each generated storyboard image, run a per-cell quality check before writing final Seedance prompts: first P0 product fidelity/no deformation, then logo/mark physical logic, then real-world physics, then benchmark-frame similarity. If the product fails P0, do not accept the image as final.
 11. Apply the finite retry rule: generate the whole storyboard once and QC once. If only 1-2 cells have correctable issues, regenerate once with targeted corrections. If many cells drift, or the same P0 product-fidelity issue remains after one targeted retry, mark the run failed and report the exact reason instead of continuing automatic retries.
-12. Run Seedance video prompt generation with `references/prompts/07-seedance-video-prompt.md` only after storyboard QC. If the storyboard has wrong product type, wrong product shape, serious deformation, wrong color/variant, or many cells that no longer match the benchmark, stop and report failure. If the storyboard's only remaining issue is missing/unclear/misplaced product identity detail while product images clearly lock the correct product, and the user explicitly wants Seedance API testing with their own configured API key, mark the storyboard as structure-only and write the Seedance prompt so product images are the only product appearance source; do not call that storyboard product-fidelity-passed.
-13. If the user asks for final video generation through Seedance API, first confirm they have configured their own private API key in the local environment or `$HOME/.codex/secrets/seedance.env`. Never use or request a shared packaged key. Then load `references/seedance-api.md`, submit the prompt/product images/storyboard image with `scripts/seedance_submit.py`, poll the task, download the MP4, and run video QC. If no API key is configured, deliver the storyboard image(s) and final Seedance prompts for manual upload/generation instead. The final video fails if any shot that should show a product identity detail, including logo/mark/text/pattern, pendant, clasp, gemstone, connector, label, packaging detail, screen, button, cap, nozzle, or distinctive texture, lacks it or moves it to the wrong physical surface.
+12. Run Seedance video prompt generation with `references/prompts/07-seedance-video-prompt.md` only after storyboard QC. If the storyboard has wrong product type, wrong product shape, serious deformation, wrong color/variant, or many cells that no longer match the benchmark, stop and report failure. If the storyboard's only remaining issue is missing/unclear/misplaced product identity detail while product images clearly lock the correct product, and the user explicitly wants Seedance API testing via the X-Border relay, mark the storyboard as structure-only and write the Seedance prompt so product images are the only product appearance source; do not call that storyboard product-fidelity-passed.
+13. If the user asks for final video generation through the Seedance API, load `references/seedance-api.md`, submit the prompt/product images/storyboard image with `scripts/seedance_submit.py` via the X-Border relay (模型经 X-Border 中转,零 key; relay base URL defaults to `https://n11-server.lfy071.workers.dev`, overridable via `XBORDER_RELAY_URL`), poll the task, download the MP4, and run video QC. The final video fails if any shot that should show a product identity detail, including logo/mark/text/pattern, pendant, clasp, gemstone, connector, label, packaging detail, screen, button, cap, nozzle, or distinctive texture, lacks it or moves it to the wrong physical surface.
 14. If requested, prepare a Feishu writeback package using `references/feishu-fields.md`.
 15. During testing, clean temporary analysis files after the final outputs are ready. Keep the generated storyboard images, final Seedance video prompts, downloaded videos, and video QC result; delete extracted frames, subtitle/OCR review sheets, overview contact sheets, and other temporary inspection files unless the user explicitly asks to preserve them.
 
@@ -126,12 +126,12 @@ For 九宫格成片直投链路, ask for or locate these inputs:
 2. Generate the Chinese nine-grid storyboard script from product information. The first 3 Hook cells must follow the 强 Hook rules in `prompt_image.md`: clear 停滑点, amplified pain point or curiosity, visible product/solution turn by cell 3, and internal Hook自检评分. If the Hook is weak, rewrite the first 3 cells before showing the script.
 3. Stop and ask the user to confirm or revise the Chinese storyboard script. Do not generate image2 prompts before confirmation.
 4. After confirmation, generate the pure JSON required by `prompt_image.md`: 9 image2 `prompt_text` values plus `voiceover_tone` and `voiceover_ms` when applicable.
-5. Call Codex image2/image generation to create exactly 9 storyboard frames, one per prompt, preserving the shared `global_style`. Save the 9 frames in shot order and optionally create a 3x3 overview grid for review.
+5. Call `scripts/xborder_image.py` (X-Border relay, 零 key) to create exactly 9 storyboard frames, one per prompt, preserving the shared `global_style`. Pass product images as `--reference-image` inputs and optionally pass the previous frame as an additional reference for style continuity. Save the 9 frames in shot order and optionally create a 3x3 overview grid for review.
 6. QC the 9 storyboard frames against the confirmed script and product images. If 1-2 frames are correctable, regenerate those frames once with targeted fixes. If the Hook frames no longer read as strong Hook, regenerate the weak Hook frames before continuing.
 7. Run `references/prompts/08-nine-grid-video-prompt.md` to write the final Seedance/C端2.0 prompt from the 9 storyboard frames, 9 prompts, voiceover/copy, product information, and product images.
-8. If the user only wants prompts or no API key is configured, deliver the generated frames, image2 JSON, final Seedance prompt, selected `audio_mode`, and exact reference-image order for manual upload.
-9. If the user asks Codex to generate video through the API, submit through `scripts/seedance_submit.py` with `--reference-mode grid-storyboard` and `--audio-mode` set from the user request or the default policy, passing product images first if provided, then the 9 storyboard frames in order. Use `--reference-audio-url` when the user provides reference music/audio. Use `--dry-run` before a paid call unless the user explicitly asks to submit directly.
-10. Poll and download the video only after confirming `ARK_API_KEY` exists in the environment or `$HOME/.codex/secrets/seedance.env`. Never request or store a shared packaged key.
+8. If the user only wants prompts, deliver the generated frames, image2 JSON, final Seedance prompt, selected `audio_mode`, and exact reference-image order for manual upload.
+9. If the user asks Codex to generate video through the API, submit through `scripts/seedance_submit.py` via the X-Border relay (零 key) with `--reference-mode grid-storyboard` and `--audio-mode` set from the user request or the default policy, passing product images first if provided, then the 9 storyboard frames in order. Use `--reference-audio-url` when the user provides reference music/audio. Use `--dry-run` before a paid call unless the user explicitly asks to submit directly.
+10. Poll and download the video via the relay. No API key setup required.
 11. Run video QC against the 9 frames and 9 prompts. The output fails if it skips/reorders shots, weakens the Hook, invents new scenes, breaks product identity, adds subtitles/screen text that were not requested, or violates physical-world logic.
 
 ## 九宫格成片直投链路 Workflow
@@ -140,9 +140,9 @@ For 九宫格成片直投链路, ask for or locate these inputs:
 2. Verify the user provided 9 storyboard frames and 9 prompts generated from the `prompt_image.md` system. If only a 3x3 overview grid is provided, ask whether to use it as the structure reference or request the separate 9 frames.
 3. Do not regenerate the Chinese script and do not call image2 unless the user explicitly asks to repair or remake frames.
 4. Run `references/prompts/08-nine-grid-video-prompt.md` to write one final Seedance/C端2.0 prompt. The prompt must follow the 9 provided frames in order, preserve the 9 prompts' intent, and keep all shots physically plausible.
-5. If the user only wants a prompt or no API key is configured, deliver the prompt, selected `audio_mode`, and the exact reference-image order for manual upload.
-6. If the user asks Codex to generate video through the API, submit through `scripts/seedance_submit.py` with `--reference-mode grid-storyboard` and `--audio-mode` set from the user request or the default policy, passing product images first if provided, then the 9 storyboard frames in order. Use `--reference-audio-url` when the user provides reference music/audio. Use `--dry-run` before a paid call unless the user explicitly asks to submit directly.
-7. Poll and download the video only after confirming `ARK_API_KEY` exists in the environment or `$HOME/.codex/secrets/seedance.env`. Never request or store a shared packaged key.
+5. If the user only wants a prompt, deliver the prompt, selected `audio_mode`, and the exact reference-image order for manual upload.
+6. If the user asks Codex to generate video through the API, submit through `scripts/seedance_submit.py` via the X-Border relay (零 key) with `--reference-mode grid-storyboard` and `--audio-mode` set from the user request or the default policy, passing product images first if provided, then the 9 storyboard frames in order. Use `--reference-audio-url` when the user provides reference music/audio. Use `--dry-run` before a paid call unless the user explicitly asks to submit directly.
+7. Poll and download the video via the relay. No API key setup required.
 8. Run video QC against the 9 frames and 9 prompts. The output fails if it skips/reorders shots, invents new scenes, breaks product identity, adds subtitles/screen text that were not requested, or violates physical-world logic.
 
 ## When To Load References
@@ -150,7 +150,7 @@ For 九宫格成片直投链路, ask for or locate these inputs:
 - Load `references/workflow.md` for end-to-end file organization and output naming.
 - Load `references/product-fidelity-gate.md` before storyboard prompt generation, storyboard QC, any regeneration decision, and Seedance prompt writing for soft goods/logo-sensitive products.
 - Load `references/seedance-rules.md` before writing or reviewing Seedance prompts.
-- Load `references/seedance-api.md` when the user asks to submit or poll Seedance API generation tasks and has their own API key configured.
+- Load `references/seedance-api.md` when the user asks to submit or poll Seedance API generation tasks via the X-Border relay.
 - Load `references/prompts/00-prompt-image.md` for 强 Hook 九宫格生成出片链路 before generating Chinese storyboard scripts or image2 prompts; use workspace `prompt_image.md` only when the user explicitly points to it.
 - Load `references/grid-to-video-workflow.md` and `references/prompts/08-nine-grid-video-prompt.md` for 九宫格成片直投链路 and for the Seedance prompt step of 强 Hook 九宫格生成出片链路.
 - Load `references/copy-extraction.md` before extracting or correcting original video copy.

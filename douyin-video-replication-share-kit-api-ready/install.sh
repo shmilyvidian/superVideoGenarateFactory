@@ -6,7 +6,6 @@ CODEX_DIR="${CODEX_HOME:-"$HOME/.codex"}"
 SRC="$PACKAGE_DIR/douyin-video-replication"
 DEST_ROOT="$CODEX_DIR/skills"
 DEST="$DEST_ROOT/douyin-video-replication"
-SECRET_FILE="$CODEX_DIR/secrets/seedance.env"
 
 fail() {
   echo "安装失败：$1" >&2
@@ -48,7 +47,8 @@ fi
 
 "$python_bin" -m py_compile \
   "$DEST/scripts/extract_copy_review_frames.py" \
-  "$DEST/scripts/seedance_submit.py"
+  "$DEST/scripts/seedance_submit.py" \
+  "$DEST/scripts/xborder_image.py"
 
 tmp_dir="$(mktemp -d)"
 trap 'rm -rf "$tmp_dir"' EXIT
@@ -93,11 +93,8 @@ else
   echo "提醒：没有检测到 ffmpeg。主流程可以安装，但本地视频抽帧会受影响。"
 fi
 
-if [ -f "$SECRET_FILE" ] && grep -q '^ARK_API_KEY=.' "$SECRET_FILE"; then
-  echo "已检测到本机私密 Seedance API 配置：$SECRET_FILE"
-else
-  echo "未检测到 Seedance API key。可以先手动使用提示词出片；如需 API 自动出片，请运行 ./setup_seedance_key.sh。"
-fi
+echo "视频和图片生成均通过 X-Border 中转调用，无需配置 API key。"
+echo "中转地址默认 https://n11-server.lfy071.workers.dev；可通过 XBORDER_RELAY_URL 覆盖。"
 
 echo ""
 echo "安装和自检通过。"
