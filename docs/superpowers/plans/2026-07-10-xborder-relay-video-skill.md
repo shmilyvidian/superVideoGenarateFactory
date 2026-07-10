@@ -321,9 +321,10 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 Create `packages/n11-server/src/video/__tests__/mount.test.ts`:
 ```ts
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import app from '../../index';
+import worker from '../../index';
 
 const ENV = { ARK_API_KEY: 'k', OPENROUTER_API_KEY: 'x' } as any;
+const CTX = { waitUntil() {}, passThroughOnException() {} } as any;
 
 describe('/video 挂载', () => {
   beforeEach(() => vi.restoreAllMocks());
@@ -331,15 +332,17 @@ describe('/video 挂载', () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(JSON.stringify({ id: 'cgt-x' }), { status: 200 }),
     );
-    const res = await app.request('/video/seedance/tasks', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}',
-    }, ENV);
+    const res = await worker.fetch(
+      new Request('https://n11/video/seedance/tasks', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}',
+      }), ENV, CTX,
+    );
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ id: 'cgt-x' });
   });
 });
 ```
-注:`src/index.ts` `export default { fetch, ... }`,而 `app` 是模块内 `const`。为可测试,Step 3 增加 `export { app };`(具名导出,不改默认导出行为)。
+注:`src/index.ts` 默认导出是 `{ fetch: app.fetch }`。用默认导出 `worker.fetch(request, env, ctx)` 测试即可,无需给 `index.ts` 加任何测试专用导出。
 
 - [ ] **Step 2: 跑测试确认失败**
 
@@ -356,7 +359,6 @@ In `packages/n11-server/src/type.ts`,`AppBindings` 加一行:
 In `packages/n11-server/src/index.ts`:
 - 顶部与其它 router import 一起加:`import videoRouter from "./video";`
 - 在 `app.route("/image", imageRouter);`(第 199 行)之后加:`app.route("/video", videoRouter);`
-- 在 `const app = new Hono<{ Bindings: AppBindings }>();` 之后(或文件末尾 default export 之前)加具名导出:`export { app };`
 
 In `packages/n11-server/.dev.vars.example` 追加一行:
 ```
@@ -595,15 +597,18 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 Create `.../tests/test_xborder_image_contract.py`:
 ```python
-import json
 import subprocess
 import sys
 import tempfile
+import types
 import unittest
 from pathlib import Path
 
 SKILL_ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = SKILL_ROOT / "scripts"
+sys.path.insert(0, str(SCRIPTS))
+
+import xborder_image as xi  # noqa: E402
 
 ONE_PIXEL_PNG = (
     b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"
@@ -614,30 +619,44 @@ ONE_PIXEL_PNG = (
 
 
 class XBorderImageContractTest(unittest.TestCase):
-    def test_dry_run_body_shape(self):
+    def test_build_body_shape(self):
         with tempfile.TemporaryDirectory() as tmp:
             tmp_path = Path(tmp)
             p1 = tmp_path / "prod.png"; p1.write_bytes(ONE_PIXEL_PNG)
             p2 = tmp_path / "prev.png"; p2.write_bytes(ONE_PIXEL_PNG)
-            out = tmp_path / "frame.png"
-            body_file = tmp_path / "request.json"
-            result = subprocess.run(
-                [sys.executable, str(SCRIPTS / "xborder_image.py"),
-                 "--prompt", "cell 1",
-                 "--reference-image", str(p1),
-                 "--reference-image", str(p2),
-                 "--model", "seedream-4.5",
-                 "--scale", "9:16",
-                 "--output", str(out),
-                 "--dry-run", "--dump-body", str(body_file)],
-                check=False, text=True, capture_output=True,
+            args = types.SimpleNamespace(
+                prompt="cell 1", prompt_file=None,
+                reference_image=[p1, p2],
+                model="seedream-4.5", scale="9:16",
             )
-            self.assertEqual(result.returncode, 0, result.stderr)
-            body = json.loads(body_file.read_text(encoding="utf-8"))
+            body = xi.build_body(args)
             self.assertEqual(len(body["image"]), 2)
             self.assertTrue(body["image"][0].startswith("data:image/"))
             self.assertEqual(body["model"], "seedream-4.5")
             self.assertEqual(body["seedreamOptions"]["aspect_ratio"], "9:16")
+
+    def test_nano_banana_omits_seedream_options(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p1 = Path(tmp) / "prod.png"; p1.write_bytes(ONE_PIXEL_PNG)
+            args = types.SimpleNamespace(
+                prompt="c", prompt_file=None, reference_image=[p1],
+                model="nano-banana-pro", scale="9:16",
+            )
+            body = xi.build_body(args)
+            self.assertNotIn("seedreamOptions", body)
+
+    def test_dry_run_needs_no_key(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            p1 = tmp_path / "prod.png"; p1.write_bytes(ONE_PIXEL_PNG)
+            out = tmp_path / "frame.png"
+            result = subprocess.run(
+                [sys.executable, str(SCRIPTS / "xborder_image.py"),
+                 "--prompt", "c", "--reference-image", str(p1),
+                 "--output", str(out), "--dry-run"],
+                check=False, text=True, capture_output=True,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
 
 
 if __name__ == "__main__":
@@ -677,6 +696,8 @@ DEFAULT_MODEL = "seedream-4.5"
 SEEDREAM_ASPECT = {"1:1", "16:9", "9:16"}
 
 
+# 独立实现,与 seedance_submit.py 一致。两个脚本各自独立分发/运行(Codex 逐个调用),
+# 刻意不共享内部模块,保持单文件可移植。
 def image_to_data_url(path: Path) -> str:
     data = path.read_bytes()
     if len(data) > 30 * 1024 * 1024:
@@ -731,7 +752,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--base-url",
                         default=os.environ.get("XBORDER_RELAY_URL", DEFAULT_BASE_URL))
     parser.add_argument("--dry-run", action="store_true")
-    parser.add_argument("--dump-body", type=Path, help="Write the request body JSON (for tests).")
     args = parser.parse_args()
     if not args.prompt and not args.prompt_file:
         parser.error("provide --prompt or --prompt-file")
@@ -746,9 +766,6 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     body = build_body(args)
-    if args.dump_body:
-        args.dump_body.parent.mkdir(parents=True, exist_ok=True)
-        args.dump_body.write_text(json.dumps(body, ensure_ascii=False, indent=2), encoding="utf-8")
     if args.dry_run:
         print(f"Dry run: would POST {args.base_url}{EDIT_PATH} with {len(body['image'])} image(s)")
         return 0
