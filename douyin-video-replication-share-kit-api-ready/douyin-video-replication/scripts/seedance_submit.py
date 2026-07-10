@@ -20,10 +20,9 @@ from pathlib import Path
 from typing import Any
 
 
-DEFAULT_BASE_URL = "https://ark.cn-beijing.volces.com"
-TASKS_PATH = "/api/v3/contents/generations/tasks"
+DEFAULT_BASE_URL = "https://n11-server.lfy071.workers.dev"
+TASKS_PATH = "/video/seedance/tasks"
 DEFAULT_MODEL = "doubao-seedance-2-0-260128"
-DEFAULT_ENV_FILE = Path.home() / ".codex" / "secrets" / "seedance.env"
 SUCCESS_STATUSES = {"succeeded", "completed"}
 FINAL_STATUSES = SUCCESS_STATUSES | {"failed", "cancelled", "expired"}
 RUNNING_STATUSES = {"queued", "running", "pending", "processing"}
@@ -56,20 +55,6 @@ AUDIO_MODE_PREFIXES = {
     "voiceover": "【声音配置】生成真实环境音、动作音效和人声口播/旁白；背景音乐不生成或仅保留极轻的铺底音乐。口播节奏必须贴合画面动作。",
     "full": "【声音配置】环境音、动作音效、背景音乐和人声口播全部允许。环境音要贴合画面动作，背景音乐要符合广告节奏，人声口播要清晰自然。",
 }
-
-
-def load_env_file(path: Path) -> None:
-    if not path.exists():
-        raise FileNotFoundError(f"env file not found: {path}")
-    for raw_line in path.read_text(encoding="utf-8").splitlines():
-        line = raw_line.strip()
-        if not line or line.startswith("#") or "=" not in line:
-            continue
-        key, value = line.split("=", 1)
-        key = key.strip()
-        value = value.strip().strip("'\"")
-        if key and key not in os.environ:
-            os.environ[key] = value
 
 
 def read_text(path: Path) -> str:
@@ -110,8 +95,8 @@ def image_to_data_url(path: Path) -> str:
     return f"data:{mime.lower()};base64,{encoded}"
 
 
-def request_json(method: str, url: str, api_key: str, payload: dict[str, Any] | None = None) -> dict[str, Any]:
-    headers = {"Authorization": f"Bearer {api_key}"}
+def request_json(method: str, url: str, payload: dict[str, Any] | None = None) -> dict[str, Any]:
+    headers = {}
     data = None
     if payload is not None:
         data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
@@ -124,7 +109,7 @@ def request_json(method: str, url: str, api_key: str, payload: dict[str, Any] | 
             return json.loads(body)
     except urllib.error.HTTPError as exc:
         detail = exc.read().decode("utf-8", errors="replace")
-        raise RuntimeError(f"HTTP {exc.code} from Seedance API: {detail}") from exc
+        raise RuntimeError(f"HTTP {exc.code} from X-Border relay: {detail}") from exc
 
 
 def build_task_url(base_url: str, task_id: str | None = None) -> str:
@@ -218,14 +203,9 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--output-dir", type=Path, required=True, help="Directory for task status and downloaded video.")
     parser.add_argument(
-        "--env-file",
-        type=Path,
-        help=f"Optional local env file containing ARK_API_KEY=... Defaults to {DEFAULT_ENV_FILE} when present.",
-    )
-    parser.add_argument(
         "--base-url",
-        default=os.environ.get("ARK_BASE_URL", DEFAULT_BASE_URL),
-        help=f"Ark/ModelArk base URL. Defaults to ARK_BASE_URL or {DEFAULT_BASE_URL}.",
+        default=os.environ.get("XBORDER_RELAY_URL", DEFAULT_BASE_URL),
+        help=f"X-Border relay base URL. Defaults to XBORDER_RELAY_URL or {DEFAULT_BASE_URL}.",
     )
     parser.add_argument("--model", default=os.environ.get("SEEDANCE_MODEL", DEFAULT_MODEL))
     parser.add_argument("--ratio", default="9:16")
@@ -302,10 +282,6 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
-    if args.env_file:
-        load_env_file(args.env_file)
-    elif not os.environ.get("ARK_API_KEY") and DEFAULT_ENV_FILE.exists():
-        load_env_file(DEFAULT_ENV_FILE)
 
     payload = build_payload(args)
     args.output_dir.mkdir(parents=True, exist_ok=True)
@@ -318,13 +294,7 @@ def main() -> int:
         print(f"Dry run written: {args.output_dir / 'request.redacted.json'}")
         return 0
 
-    api_key = os.environ.get("ARK_API_KEY")
-    if not api_key:
-        raise RuntimeError(
-            "ARK_API_KEY is not set. Export it in your shell or pass --env-file pointing to a private env file."
-        )
-
-    create_result = request_json("POST", build_task_url(args.base_url), api_key, payload)
+    create_result = request_json("POST", build_task_url(args.base_url), payload)
     task_id = create_result.get("id")
     if not task_id:
         raise RuntimeError(f"Seedance create response did not contain id: {create_result}")
@@ -341,7 +311,7 @@ def main() -> int:
     last_status = None
     status_result: dict[str, Any] = {}
     while time.time() < deadline:
-        status_result = request_json("GET", build_task_url(args.base_url, task_id), api_key)
+        status_result = request_json("GET", build_task_url(args.base_url, task_id))
         status_value = status_result.get("status")
         last_status = str(status_value).lower() if status_value is not None else None
         (args.output_dir / "status.json").write_text(
