@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Submit a Seedance 2.0 video generation task through Volcano Ark.
+"""Submit a Seedance 2.0 video generation task through the relay (Replicate backend).
 
-The script intentionally reads the API key from the environment or a local
-env-file. Do not put API keys in SKILL.md, prompt files, or committed files.
+The relay forwards the request body verbatim as the Replicate `input` to
+`bytedance/seedance-2.0`. No API key is required on the client side.
 """
 
 from __future__ import annotations
@@ -22,10 +22,9 @@ from typing import Any
 
 DEFAULT_BASE_URL = "https://n11-server.lfy071.workers.dev"
 TASKS_PATH = "/video/seedance/tasks"
-DEFAULT_MODEL = "doubao-seedance-2-0-260128"
-SUCCESS_STATUSES = {"succeeded", "completed"}
-FINAL_STATUSES = SUCCESS_STATUSES | {"failed", "cancelled", "expired"}
-RUNNING_STATUSES = {"queued", "running", "pending", "processing"}
+SUCCESS_STATUSES = {"succeeded"}
+FINAL_STATUSES = SUCCESS_STATUSES | {"failed", "canceled"}
+RUNNING_STATUSES = {"starting", "processing"}
 
 
 GENERIC_PRODUCT_LOCK_PREFIX = """\
@@ -136,35 +135,21 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
     if args.reference_note:
         prompt = args.reference_note.strip() + "\n\n" + prompt
 
-    content: list[dict[str, Any]] = [{"type": "text", "text": prompt}]
-    for path in args.reference_image:
-        content.append(
-            {
-                "type": "image_url",
-                "image_url": {"url": image_to_data_url(path)},
-                "role": "reference_image",
-            }
-        )
-    for url in args.reference_audio_url:
-        content.append(
-            {
-                "type": "audio_url",
-                "audio_url": {"url": url},
-                "role": "reference_audio",
-            }
-        )
+    reference_images = [image_to_data_url(p) for p in args.reference_image]
+    if reference_images:
+        refs = " ".join(f"[Image{i + 1}]" for i in range(len(reference_images)))
+        prompt = prompt + f"\n\n参考图顺序(产品图在前、分镜图在后):{refs}"
 
     payload: dict[str, Any] = {
-        "model": args.model,
-        "content": content,
-        "ratio": args.ratio,
+        "prompt": prompt,
+        "reference_images": reference_images,
+        "aspect_ratio": args.ratio,
         "duration": args.duration,
         "resolution": args.resolution,
-        "generate_audio": args.audio_mode != "silent" or args.generate_audio,
-        "watermark": args.watermark,
+        "generate_audio": args.audio_mode != "silent",
     }
-    if args.return_last_frame:
-        payload["return_last_frame"] = True
+    if args.reference_audio_url:
+        payload["reference_audios"] = args.reference_audio_url
     if args.seed is not None:
         payload["seed"] = args.seed
     return payload
@@ -172,12 +157,13 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
 
 def redacted_payload(payload: dict[str, Any]) -> dict[str, Any]:
     clone = json.loads(json.dumps(payload, ensure_ascii=False))
-    for item in clone.get("content", []):
-        if item.get("type") == "image_url":
-            url = item.get("image_url", {}).get("url", "")
-            if isinstance(url, str) and url.startswith("data:image/"):
-                head = url.split(",", 1)[0]
-                item["image_url"]["url"] = head + ",<base64 omitted>"
+    imgs = clone.get("reference_images", [])
+    clone["reference_images"] = [
+        (u.split(",", 1)[0] + ",<base64 omitted>")
+        if isinstance(u, str) and u.startswith("data:image/")
+        else u
+        for u in imgs
+    ]
     return clone
 
 
@@ -207,10 +193,9 @@ def parse_args() -> argparse.Namespace:
         default=os.environ.get("XBORDER_RELAY_URL", DEFAULT_BASE_URL),
         help=f"X-Border relay base URL. Defaults to XBORDER_RELAY_URL or {DEFAULT_BASE_URL}.",
     )
-    parser.add_argument("--model", default=os.environ.get("SEEDANCE_MODEL", DEFAULT_MODEL))
     parser.add_argument("--ratio", default="9:16")
     parser.add_argument("--duration", type=int, default=15)
-    parser.add_argument("--resolution", default="720p", choices=["480p", "720p", "1080p"])
+    parser.add_argument("--resolution", default="720p", choices=["480p", "720p", "1080p", "4k"])
     parser.add_argument(
         "--audio-mode",
         default=os.environ.get("SEEDANCE_AUDIO_MODE", "ambient"),
@@ -228,15 +213,8 @@ def parse_args() -> argparse.Namespace:
         "--reference-audio-url",
         action="append",
         default=[],
-        help="Reference audio URL to pass as role=reference_audio. Can be provided multiple times.",
+        help="Reference audio URL to pass as reference_audios. Can be provided multiple times.",
     )
-    parser.add_argument(
-        "--generate-audio",
-        action="store_true",
-        help="Backward-compatible flag to ask Seedance to generate audio. Prefer --audio-mode.",
-    )
-    parser.add_argument("--watermark", action="store_true", help="Request AI generated watermark.")
-    parser.add_argument("--return-last-frame", action="store_true")
     parser.add_argument("--seed", type=int)
     parser.add_argument("--poll", action="store_true", help="Poll until the task finishes and download the video.")
     parser.add_argument("--poll-interval", type=int, default=20)
@@ -273,10 +251,8 @@ def parse_args() -> argparse.Namespace:
             parser.error(f"reference image does not exist: {path}")
     if args.product_lock_file and not args.product_lock_file.exists():
         parser.error(f"product lock file does not exist: {args.product_lock_file}")
-    if args.audio_mode == "silent" and args.generate_audio:
-        parser.error("--audio-mode silent conflicts with --generate-audio")
-    if not (4 <= args.duration <= 15):
-        parser.error("Seedance 2.0 duration must be between 4 and 15 seconds")
+    if args.duration != -1 and not (4 <= args.duration <= 15):
+        parser.error("Seedance duration must be -1 (auto) or between 4 and 15 seconds")
     return args
 
 
@@ -330,18 +306,14 @@ def main() -> int:
     if last_status not in SUCCESS_STATUSES:
         raise RuntimeError(f"Seedance task did not succeed: {status_result}")
 
-    content = status_result.get("content") or {}
-    video_url = content.get("video_url")
+    output = status_result.get("output")
+    video_url = output if isinstance(output, str) else (output[0] if isinstance(output, list) and output else None)
     if not video_url:
-        raise RuntimeError(f"Seedance succeeded but no video_url was returned: {status_result}")
-
+        raise RuntimeError(f"Prediction succeeded but no output URL: {status_result}")
     out_video = args.output_dir / f"{task_id}.mp4"
     download_file(video_url, out_video)
     print(f"Downloaded video: {out_video}")
 
-    last_frame_url = content.get("last_frame_url")
-    if last_frame_url:
-        download_file(last_frame_url, args.output_dir / f"{task_id}_last_frame.png")
     return 0
 
 

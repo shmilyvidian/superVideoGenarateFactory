@@ -63,7 +63,7 @@ class RouteContractTest(unittest.TestCase):
 
             self.assertEqual(result.returncode, 0, result.stderr)
             payload = json.loads((out_dir / "request.redacted.json").read_text(encoding="utf-8"))
-            prompt = payload["content"][0]["text"]
+            prompt = payload["prompt"]
 
         self.assertIn("【九宫格分镜直出规则】", prompt)
         self.assertNotIn("【通用产品外观硬约束】", prompt)
@@ -98,7 +98,7 @@ class RouteContractTest(unittest.TestCase):
 
             self.assertEqual(result.returncode, 0, result.stderr)
             payload = json.loads((out_dir / "request.redacted.json").read_text(encoding="utf-8"))
-            prompt = payload["content"][0]["text"]
+            prompt = payload["prompt"]
 
         self.assertIn("【通用产品外观硬约束】", prompt)
 

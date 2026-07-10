@@ -56,6 +56,26 @@ class RelayContractTest(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertTrue((out / "request.redacted.json").exists())
 
+    def test_dry_run_payload_is_replicate_input(self):
+        import json as _json
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            ref = tmp_path / "grid.png"; ref.write_bytes(ONE_PIXEL_PNG)
+            out = tmp_path / "out"
+            subprocess.run(
+                [sys.executable, str(SCRIPTS / "seedance_submit.py"),
+                 "--prompt", "t", "--reference-image", str(ref),
+                 "--reference-mode", "grid-storyboard", "--output-dir", str(out),
+                 "--ratio", "9:16", "--duration", "9", "--resolution", "480p", "--dry-run"],
+                check=True, text=True, capture_output=True,
+            )
+            payload = _json.loads((out / "request.redacted.json").read_text(encoding="utf-8"))
+            self.assertIsInstance(payload["reference_images"], list)
+            self.assertEqual(payload["aspect_ratio"], "9:16")
+            self.assertIn("generate_audio", payload)
+            self.assertNotIn("content", payload)
+            self.assertNotIn("model", payload)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -56,7 +56,7 @@ def dry_run_payload(*extra_args: str) -> dict:
 class SeedanceAudioContractTest(unittest.TestCase):
     def test_ambient_audio_mode_enables_environment_sound_without_voice_or_music(self):
         payload = dry_run_payload("--audio-mode", "ambient")
-        prompt = payload["content"][0]["text"]
+        prompt = payload["prompt"]
 
         self.assertTrue(payload["generate_audio"])
         self.assertIn("【声音配置】", prompt)
@@ -74,19 +74,19 @@ class SeedanceAudioContractTest(unittest.TestCase):
             "--reference-audio-url",
             "https://example.com/music.mp3",
         )
-        prompt = payload["content"][0]["text"]
+        prompt = payload["prompt"]
 
         self.assertTrue(payload["generate_audio"])
         self.assertIn("环境音", prompt)
         self.assertIn("背景音乐", prompt)
         self.assertIn("人声口播", prompt)
         self.assertIn("女生音色，轻快广告音乐。", prompt)
-        self.assertEqual(payload["content"][-1]["type"], "audio_url")
-        self.assertEqual(payload["content"][-1]["role"], "reference_audio")
+        self.assertIsInstance(payload["reference_audios"], list)
+        self.assertIn("https://example.com/music.mp3", payload["reference_audios"])
 
     def test_silent_audio_mode_disables_generated_audio(self):
         payload = dry_run_payload("--audio-mode", "silent")
-        prompt = payload["content"][0]["text"]
+        prompt = payload["prompt"]
 
         self.assertFalse(payload["generate_audio"])
         self.assertIn("静音模式", prompt)
