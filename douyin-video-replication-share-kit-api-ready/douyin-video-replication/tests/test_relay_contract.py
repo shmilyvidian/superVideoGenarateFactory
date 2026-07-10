@@ -31,7 +31,7 @@ class RelayContractTest(unittest.TestCase):
             ss.build_task_url(base), base + "/video/seedance/tasks"
         )
         self.assertEqual(
-            ss.build_task_url(base, "cgt-1"), base + "/video/seedance/tasks/cgt-1"
+            ss.build_task_url(base, "pred-1"), base + "/video/seedance/tasks/pred-1"
         )
 
     def test_no_ark_api_key_symbols(self):
