@@ -49,7 +49,7 @@ POST {relay}/video/seedance/tasks
 返回示例：
 
 ```json
-{ "id": "cgt-xxxxxxxx", "status": "starting", ... }
+{ "id": "gm3q7k2xp9wq5r", "status": "starting", "output": null, "error": null }
 ```
 
 ### 查询任务
@@ -61,7 +61,7 @@ GET {relay}/video/seedance/tasks/{id}
 返回：
 
 ```json
-{ "id": "cgt-xxxxxxxx", "status": "succeeded", "output": "https://..../video.mp4", "error": null }
+{ "id": "gm3q7k2xp9wq5r", "status": "succeeded", "output": "https://..../video.mp4", "error": null }
 ```
 
 `status` 取值：`starting` → `processing` → `succeeded` / `canceled` / `failed`
