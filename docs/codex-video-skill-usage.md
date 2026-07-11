@@ -8,7 +8,7 @@
 2. 强 Hook 九宫格生成出片链路
 3. 九宫格成片直投链路
 
-Seedance 2.0 的 API key 已配置在本机私密文件中，使用时不要再把 key 发到聊天里，也不要写进文档、prompt、代码或仓库。
+图片和视频生成都经 X-Border 中转调用，用户侧零 key，无需配置任何密钥；Provider key 由 Worker 服务端持有，不要把任何密钥写进聊天、文档、prompt、代码或仓库。
 
 Seedance 出片默认保留真实环境音和动作音效。只有你明确要求静音时，才使用静音模式。
 
@@ -323,12 +323,11 @@ audio_mode=silent
 
 ## 七、注意事项
 
-1. 不要在聊天里反复发送 API key。
-2. API key 只保存在本机私密文件中。
-3. 如果 key 已经暴露在聊天或截图里，建议去火山方舟后台轮换新 key。
-4. 复刻链路里的对标视频默认是给 Codex 拆解用，不是直接作为 Seedance 的 `reference_video`。
-5. 当前脚本已经验证过基础 Seedance 出片链路：图片参考 + 文本 prompt 可以创建任务、轮询并下载 MP4。
-6. 当前已经支持 `reference_audio` URL；如果未来要支持官方示例里的 `reference_video`，还需要继续扩展 `seedance_submit.py`。
+1. 图片和视频都经 X-Border 中转调用，用户侧零 key，无需配置或保管任何密钥。
+2. Provider key 由 Worker 服务端持有，永远不会下发到客户端；不要在聊天、文档、代码或仓库里粘贴任何密钥。
+3. 复刻链路里的对标视频默认是给 Codex 拆解用，不是直接作为 Seedance 的 `reference_video`。
+4. 当前脚本已经验证过基础 Seedance 出片链路：图片参考 + 文本 prompt 可以创建任务、轮询并下载 MP4。
+5. 当前已经支持 `reference_audio` URL；如果未来要支持官方示例里的 `reference_video`，还需要继续扩展 `seedance_submit.py`。
 
 ---
 
