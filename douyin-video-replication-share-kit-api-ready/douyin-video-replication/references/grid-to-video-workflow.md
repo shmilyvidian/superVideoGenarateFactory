@@ -36,7 +36,7 @@ The final prompt must:
 
 ## API Submission
 
-When the user asks for API generation and a private key is configured, run a dry run first:
+When the user asks for API generation, run a dry run first:
 
 ```bash
 python3 $HOME/.codex/skills/douyin-video-replication/scripts/seedance_submit.py \

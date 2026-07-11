@@ -4,7 +4,7 @@
 
 - Product images are the P0 product lock. They override storyboard images for product appearance whenever the storyboard has product drift, unclear identity detail, unclear logo/text, or minor deformation. Product images lock product appearance, color, shape, scale, material, texture, logo/mark/text/pattern placement, logo/mark/text/pattern size, logo/mark/text/pattern color, logo/mark/text/pattern direction, and category-specific visible details such as pendant, clasp, gemstone, connector, label, screen, button, cap, nozzle, packaging, or distinctive texture.
 - Storyboard images lock shot order, composition, scene, lighting, hand/person style, and phone-shot texture.
-- If a storyboard has missing, unclear, or misplaced product identity details but the user still wants Seedance API testing with their own configured API key, demote it to a structure-only storyboard. Do not let Seedance inherit any missing, wrong, misplaced, wrong-scale, wrong-material, or wrong-color product appearance from that storyboard.
+- If a storyboard has missing, unclear, or misplaced product identity details but the user still wants to generate the video through the X-Border relay, demote it to a structure-only storyboard. Do not let Seedance inherit any missing, wrong, misplaced, wrong-scale, wrong-material, or wrong-color product appearance from that storyboard.
 - Original video breakdown locks timecode, action order, and visual events.
 - Benchmark video shots lock the only allowed scene/action library. Product images do not create new shots; they only replace product appearance inside the benchmark video's existing shot structure.
 - Rewritten copy locks voiceover rhythm and lip/action pacing.
@@ -25,7 +25,7 @@
 - For second and later segments, optionally upload the first storyboard image as an additional storyboard/style reference to maintain continuity.
 - Do not upload or reference the first generated video, previous generated segment, or any generated video clip for continuity. Long-video consistency should be controlled through the product images and storyboard images only.
 - Never upload the benchmark video as a Seedance reference unless the user explicitly changes the workflow.
-- For Seedance API submission, proceed only when the user has configured their own private API key. Use `scripts/seedance_submit.py` and upload product images first, then the current segment storyboard image. Keep all images as `reference_image` for multimodal reference generation unless the user explicitly requests first-frame/last-frame generation. If no API key is configured, deliver the same prompt/image order for manual upload/generation.
+- Seedance video generation goes through the X-Border relay — no per-user API key is needed. Use `scripts/seedance_submit.py`, uploading product images first, then the current segment storyboard image. Keep all images as reference images for multimodal reference generation unless the user explicitly requests first-frame/last-frame generation. When the user only wants prompts (no API generation), deliver the same prompt/image order for manual upload instead.
 
 ## Restrictions
 

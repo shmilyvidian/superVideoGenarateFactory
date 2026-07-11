@@ -53,7 +53,9 @@ def request_json(url: str, payload: dict[str, Any]) -> dict[str, Any]:
         url, data=data, headers={"Content-Type": "application/json"}, method="POST"
     )
     try:
-        with urllib.request.urlopen(req, timeout=180) as resp:
+        # 图片中转是同步阻塞:Worker 端 replicate.run 直到出图才返回,2K/多参考图/冷启动
+        # 可能较久,给足读超时(300s)避免正常出图被过早掐断。
+        with urllib.request.urlopen(req, timeout=300) as resp:
             return json.loads(resp.read().decode("utf-8"))
     except urllib.error.HTTPError as exc:
         detail = exc.read().decode("utf-8", errors="replace")

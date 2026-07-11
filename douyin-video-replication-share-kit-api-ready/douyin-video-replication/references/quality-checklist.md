@@ -71,7 +71,7 @@ Do not accept a generic product-ad cell that loses the benchmark shot function. 
 - Prompts use concrete director language.
 - Every cell/shot includes timecode, camera/framing, action, visible selling-point expression, scene, light, texture, and product consistency.
 - Product images remain the highest appearance lock. If a generated storyboard cell has unclear identity detail, unclear logo/text, or minor product drift, the Seedance prompt must explicitly restore product appearance from the product images and use the storyboard only for composition, shot order, scene, light, and hand/body style.
-- If the storyboard has missing/unclear/misplaced product identity details and the user asks to continue through Seedance API with their own configured API key, mark the storyboard as structure-only rather than passed. The prompt must explicitly say storyboard missing/wrong/misplaced product details are errors and must not be inherited.
+- If the storyboard has missing/unclear/misplaced product identity details and the user asks to continue through Seedance API generation, mark the storyboard as structure-only rather than passed. The prompt must explicitly say storyboard missing/wrong/misplaced product details are errors and must not be inherited.
 - Every cell/shot with a logo/mark/text/pattern-sensitive or category-detail-sensitive product states whether the relevant product surface should be visible. If visible, specify correct physical location, size, color/material, direction, and surface rotation; if hidden, specify the physical reason such as angle, hand/body/prop cover, non-detail side, crop, or depth-of-field blur.
 - Every cell/shot includes a physical-state contract when hands, feet, soft goods, jewelry, chains, or multiple product units move: contact points, support direction, object count before/after, visible body parts, and forbidden artifacts.
 - No subtitles, screen text, or background music.
@@ -85,7 +85,7 @@ Do not accept a generic product-ad cell that loses the benchmark shot function. 
 ## Final Delivery
 
 - Default final user-facing deliverables are generated storyboard image file(s), rewritten imitation copy/script, and final Seedance video prompt(s).
-- When API generation is requested and the user has configured their own API key, also deliver the downloaded MP4 and state whether final video product identity/logo QC passed or failed. If no key is configured, deliver the final prompts and reference-image order for manual Seedance generation instead.
+- When API generation is requested, also deliver the downloaded MP4 and state whether final video product identity/logo QC passed or failed. When only prompts are wanted (no API generation), deliver the final prompts and reference-image order instead.
 - Internal analysis files are not part of the default final answer unless the user asks for full analysis, troubleshooting evidence, Feishu payload, or an archive.
 
 ## Cleanup

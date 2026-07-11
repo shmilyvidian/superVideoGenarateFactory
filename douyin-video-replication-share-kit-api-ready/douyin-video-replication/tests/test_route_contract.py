@@ -112,3 +112,23 @@ class RouteContractTest(unittest.TestCase):
         self.assertIn("xborder_image.py", skill_md)
         self.assertFalse((kit_root / "setup_seedance_key.sh").exists())
         self.assertFalse((kit_root / "secrets").exists())
+
+    def test_reference_docs_have_no_own_key_language(self):
+        # B3 只清了 SKILL.md + seedance-api.md;这条锁死其余被 SKILL.md 加载的 reference
+        # 文档不能再出现「用户自己的 key / 没 key 则手动」旧话术(与零 key 中转矛盾,
+        # 会让模型运行时误判"没配 key 不能出片")。
+        import re
+
+        stale = re.compile(
+            r"own (configured|private) API key"
+            r"|configured their own"
+            r"|key is configured"
+            r"|no API key is configured"
+            r"|only when the user (has )?config",
+            re.IGNORECASE,
+        )
+        hits = []
+        for md in sorted((SKILL_ROOT / "references").rglob("*.md")):
+            for m in stale.finditer(md.read_text(encoding="utf-8")):
+                hits.append(f"{md.name}: ...{m.group(0)}...")
+        self.assertEqual(hits, [], f"stale own-key language remains: {hits}")

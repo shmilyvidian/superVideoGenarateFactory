@@ -7,7 +7,7 @@ Turn a benchmark Douyin ecommerce short video plus product assets into final pro
 - Actual storyboard images generated with Codex image generation.
 - Rewritten imitation copy/script aligned to the chosen storyboard cells.
 - Seedance 2.0 video prompts that use the generated storyboard images as segment references.
-- Optional Seedance API submission only when the user has configured their own private API key.
+- Optional Seedance API submission through the X-Border relay (no per-user API key needed).
 - Optional internal/archive analysis if explicitly needed.
 - Optional Feishu asset record.
 
@@ -35,7 +35,7 @@ outputs/
     storyboard_02.png
     storyboard_03.png
   seedance_video_prompts.md
-  seedance/                 # optional, only when using the user's own API key
+  seedance/                 # optional, when generating the final video through the relay
   feishu_record_payload.json
 ```
 
@@ -61,4 +61,4 @@ Temporary analysis folders such as `frames/`, `copy_review/`, OCR crops, and ove
 ## Future Extensions
 
 - Feishu API sync can upload generated text, images, videos, labels, and status.
-- Seedance API integration can submit prompts, poll jobs, download videos, and write results back to Feishu only when the user configures their own API key locally. Shared packages must not include real keys.
+- Seedance API integration can submit prompts, poll jobs, download videos, and write results back to Feishu through the X-Border relay (no per-user key). Never put a provider key in the skill or shared package.
