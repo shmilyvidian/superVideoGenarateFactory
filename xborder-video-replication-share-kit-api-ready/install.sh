@@ -3,9 +3,9 @@ set -euo pipefail
 
 PACKAGE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CODEX_DIR="${CODEX_HOME:-"$HOME/.codex"}"
-SRC="$PACKAGE_DIR/douyin-video-replication"
+SRC="$PACKAGE_DIR/xborder-video-replication"
 DEST_ROOT="$CODEX_DIR/skills"
-DEST="$DEST_ROOT/douyin-video-replication"
+DEST="$DEST_ROOT/xborder-video-replication"
 
 fail() {
   echo "安装失败：$1" >&2
@@ -13,12 +13,12 @@ fail() {
 }
 
 if [ ! -f "$SRC/SKILL.md" ]; then
-  fail "找不到 douyin-video-replication/SKILL.md"
+  fail "找不到 xborder-video-replication/SKILL.md"
 fi
 
 for required in references scripts agents; do
   if [ ! -e "$SRC/$required" ]; then
-    fail "缺少 douyin-video-replication/$required"
+    fail "缺少 xborder-video-replication/$required"
   fi
 done
 
@@ -98,4 +98,4 @@ echo "中转地址默认 https://n11-server.lfy071.workers.dev；可通过 XBORD
 
 echo ""
 echo "安装和自检通过。"
-echo "请重启 Codex，然后在 Codex 里使用：\$douyin-video-replication"
+echo "请重启 Codex，然后在 Codex 里使用：\$xborder-video-replication"

@@ -1,6 +1,6 @@
 # Super Video Generate Factory
 
-这是一个用于 Codex 的电商短视频生成 skill 分享仓库，核心 skill 是 `douyin-video-replication`。
+这是一个用于 Codex 的电商短视频生成 skill 分享仓库，核心 skill 是 `xborder-video-replication`。
 
 它支持三条视频生产链路：
 
@@ -16,13 +16,13 @@
 ├── prompt_image.md
 ├── docs/
 │   └── codex-video-skill-usage.md
-└── douyin-video-replication-share-kit-api-ready/
+└── xborder-video-replication-share-kit-api-ready/
     ├── README.md
     ├── install.sh
     ├── install_windows.bat
     ├── install_windows.ps1
     ├── check_install.sh
-    └── douyin-video-replication/
+    └── xborder-video-replication/
         ├── SKILL.md
         ├── scripts/
         ├── references/
@@ -35,14 +35,14 @@
 ### macOS / Linux
 
 ```bash
-cd douyin-video-replication-share-kit-api-ready
+cd xborder-video-replication-share-kit-api-ready
 ./install.sh
 ```
 
 安装后重启 Codex，然后在 Codex 中使用：
 
 ```text
-$douyin-video-replication
+$xborder-video-replication
 ```
 
 ### Windows
@@ -50,13 +50,13 @@ $douyin-video-replication
 解压或克隆仓库后，双击：
 
 ```text
-douyin-video-replication-share-kit-api-ready/install_windows.bat
+xborder-video-replication-share-kit-api-ready/install_windows.bat
 ```
 
 或者在 PowerShell 中运行：
 
 ```powershell
-cd douyin-video-replication-share-kit-api-ready
+cd xborder-video-replication-share-kit-api-ready
 powershell -NoProfile -ExecutionPolicy Bypass -File .\install_windows.ps1
 ```
 
@@ -76,14 +76,14 @@ export XBORDER_RELAY_URL=https://my-relay.example.workers.dev
 
 - [Codex 视频生成 Skill 使用说明](docs/codex-video-skill-usage.md)
 - [Demo 对话模板](demo.md)
-- [分享包 README](douyin-video-replication-share-kit-api-ready/README.md)
+- [分享包 README](xborder-video-replication-share-kit-api-ready/README.md)
 
 ## 常用启动模板
 
 ### 强 Hook 九宫格生成出片
 
 ```text
-$douyin-video-replication
+$xborder-video-replication
 
 走强 Hook 九宫格生成出片链路。
 我会上传产品图，下面是商品信息。
@@ -103,7 +103,7 @@ $douyin-video-replication
 ### 九宫格成片直投
 
 ```text
-$douyin-video-replication
+$xborder-video-replication
 
 走九宫格成片直投链路。
 
@@ -116,7 +116,7 @@ $douyin-video-replication
 ### 对标视频复刻
 
 ```text
-$douyin-video-replication
+$xborder-video-replication
 
 走复刻链路。
 

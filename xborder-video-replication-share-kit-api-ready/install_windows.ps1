@@ -2,9 +2,9 @@ $ErrorActionPreference = "Stop"
 
 $PackageDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $CodexDir = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $env:USERPROFILE ".codex" }
-$Src = Join-Path $PackageDir "douyin-video-replication"
+$Src = Join-Path $PackageDir "xborder-video-replication"
 $DestRoot = Join-Path $CodexDir "skills"
-$Dest = Join-Path $DestRoot "douyin-video-replication"
+$Dest = Join-Path $DestRoot "xborder-video-replication"
 
 function Fail($Message) {
   Write-Host "安装失败：$Message" -ForegroundColor Red
@@ -12,12 +12,12 @@ function Fail($Message) {
 }
 
 if (-not (Test-Path (Join-Path $Src "SKILL.md"))) {
-  Fail "找不到 douyin-video-replication\SKILL.md"
+  Fail "找不到 xborder-video-replication\SKILL.md"
 }
 
 foreach ($Required in @("references", "scripts", "agents")) {
   if (-not (Test-Path (Join-Path $Src $Required))) {
-    Fail "缺少 douyin-video-replication\$Required"
+    Fail "缺少 xborder-video-replication\$Required"
   }
 }
 
@@ -116,4 +116,4 @@ Write-Host "中转地址默认 https://n11-server.lfy071.workers.dev；可通过
 
 Write-Host ""
 Write-Host "安装和自检通过。" -ForegroundColor Green
-Write-Host "请重启 Codex，然后在 Codex 里使用 `$douyin-video-replication。"
+Write-Host "请重启 Codex，然后在 Codex 里使用 `$xborder-video-replication。"

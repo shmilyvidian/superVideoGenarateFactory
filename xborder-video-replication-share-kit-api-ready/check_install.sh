@@ -2,7 +2,7 @@
 set -euo pipefail
 
 CODEX_DIR="${CODEX_HOME:-"$HOME/.codex"}"
-DEST="$CODEX_DIR/skills/douyin-video-replication"
+DEST="$CODEX_DIR/skills/xborder-video-replication"
 
 fail() {
   echo "检查失败：$1" >&2
