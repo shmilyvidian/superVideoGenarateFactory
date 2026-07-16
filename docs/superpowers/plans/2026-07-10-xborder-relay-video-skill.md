@@ -416,9 +416,9 @@ curl -sS -X POST https://n11-server-test.lfy071.workers.dev/video/seedance/tasks
 ```
 Expected: 返回含 `id` 的 JSON(Ark 已受理);若 Ark 报参数错也说明转发链路通。
 
-## Part B — skill(superVideoGenarateFactory)
+## Part B — skill(xborder-video-skill)
 
-仓库:`/Users/shmilyvidian/code/superVideoGenarateFactory`,分支 `feat/xborder-relay-video-skill`(已存在)。skill 根:`douyin-video-replication-share-kit-api-ready/douyin-video-replication/`。测试:`python3 -m unittest discover -s douyin-video-replication-share-kit-api-ready/douyin-video-replication/tests -p "test_*.py" -v`。
+仓库:`/Users/shmilyvidian/code/xborder-video-skill`,分支 `feat/xborder-relay-video-skill`(已存在)。skill 根:`douyin-video-replication-share-kit-api-ready/douyin-video-replication/`。测试:`python3 -m unittest discover -s douyin-video-replication-share-kit-api-ready/douyin-video-replication/tests -p "test_*.py" -v`。
 
 ### Task B1: `seedance_submit.py` 改走中转、去 key
 
@@ -869,7 +869,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ### Task C1: 用 `registerSkillFromGitHub` 注册 skill(运行时操作)
 
-**Files:** 无代码改动(除非注册需补管理脚本)。依赖:`superVideoGenarateFactory` 已推到 GitHub 且含最新中转版 skill;操作者 userId 在 `MARKET_ADMIN_USER_IDS`。
+**Files:** 无代码改动(除非注册需补管理脚本)。依赖:`xborder-video-skill` 已推到 GitHub 且含最新中转版 skill;操作者 userId 在 `MARKET_ADMIN_USER_IDS`。
 
 - [ ] **Step 1: 推分支 / 合并到可注册的 ref**
 
@@ -881,7 +881,7 @@ Run(skill 根):`git push -u origin feat/xborder-relay-video-skill`(或合并到 
 
 - [ ] **Step 3: 调 `registerSkillFromGitHub` 注册**
 
-通过 X-Border 市场管理入口(系统设置 → `/settings/market-management`,developer-only)或直接调 admin oRPC `market.registerSkillFromGitHub`,入参指向 `superVideoGenarateFactory` 仓库中 `douyin-video-replication` skill 路径,`source='github'` 快照 zip 成一个 version。
+通过 X-Border 市场管理入口(系统设置 → `/settings/market-management`,developer-only)或直接调 admin oRPC `market.registerSkillFromGitHub`,入参指向 `xborder-video-skill` 仓库中 `douyin-video-replication` skill 路径,`source='github'` 快照 zip 成一个 version。
 - 参考:`packages/api-server/src/services/market-store.ts:188 registerSkillFromGitHub`、`packages/api-server/src/rpc/market.ts`。
 
 - [ ] **Step 4: 验证**

@@ -2,7 +2,7 @@
 
 - 日期:2026-07-10
 - 状态:设计已与用户确认,待 spec review
-- 涉及仓库:`superVideoGenarateFactory`(skill 本体,主交付)、`X-Border`(n11-server Worker 中转 + 市场注册)
+- 涉及仓库:`xborder-video-skill`(skill 本体,主交付)、`X-Border`(n11-server Worker 中转 + 市场注册)
 
 ## 1. 背景与目标
 
@@ -78,7 +78,7 @@ n11-server Worker
 - 密钥注入:`wrangler secret put ARK_API_KEY`(prod)+ `wrangler secret put ARK_API_KEY --env test`。不写进 `wrangler.jsonc` 的 `vars`。
 - 本地开发:`.dev.vars` 加 `ARK_API_KEY=...`。
 
-### 4.2 skill(superVideoGenarateFactory)
+### 4.2 skill(xborder-video-skill)
 
 根目录:`douyin-video-replication-share-kit-api-ready/`,skill 目录:`.../douyin-video-replication/`。
 

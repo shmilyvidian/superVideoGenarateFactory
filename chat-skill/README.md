@@ -31,7 +31,7 @@ douyin-video-chat/
 
 ## 打包与注册
 市场导入器要求 **SKILL.md 在 zip 根**(不是深子目录)。两种正确姿势:
-- **市场后台「登记 GitHub 来源」**:仓库 `shmilyvidian/superVideoGenarateFactory` + **子目录 `chat-skill/douyin-video-chat`**(必须填子目录,后台会重打包到根)。
+- **市场后台「登记 GitHub 来源」**:仓库 `shmilyvidian/xborder-video-skill` + **子目录 `chat-skill/douyin-video-chat`**(必须填子目录,后台会重打包到根)。
 - **上传 zip**:zip 里 `SKILL.md` + `references/` 在根。打包:`cd chat-skill/douyin-video-chat && zip -r ../douyin-video-chat.zip SKILL.md references`。
 
 需市场管理员(`developer` 角色或 `MARKET_ADMIN_USER_IDS`)。纯新增,不影响其它 skill/agent。
