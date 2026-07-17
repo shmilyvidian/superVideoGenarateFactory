@@ -1,8 +1,8 @@
-# douyin-video-replication 走 X-Border 中转 Implementation Plan
+# xborder-video-replication 走 X-Border 中转 Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** 把 `douyin-video-replication` skill 的模型调用(Seedance 视频 + 九宫格分镜图)改走 X-Border n11-server Worker 中转,provider key 全部留在 Worker 侧,删除用户 ARK_API_KEY 直连路径,并注册到 X-Border 市场。
+**Goal:** 把 `xborder-video-replication` skill 的模型调用(Seedance 视频 + 九宫格分镜图)改走 X-Border n11-server Worker 中转,provider key 全部留在 Worker 侧,删除用户 ARK_API_KEY 直连路径,并注册到 X-Border 市场。
 
 **Architecture:** 两个仓库。X-Border 的 n11-server(Cloudflare Worker,Hono)新增 `/video/seedance/*` 薄代理(挂 `ARK_API_KEY` 转发火山方舟)并把 `/image/ecom/edit` 扩展成多参考图;skill 的 Python 脚本改调这些中转端点。中转对客户端无鉴权(URL 混淆),对既有 MCP 工具/路由零影响。
 
@@ -416,9 +416,9 @@ curl -sS -X POST https://n11-server-test.lfy071.workers.dev/video/seedance/tasks
 ```
 Expected: 返回含 `id` 的 JSON(Ark 已受理);若 Ark 报参数错也说明转发链路通。
 
-## Part B — skill(superVideoGenarateFactory)
+## Part B — skill(xborder-video-skill)
 
-仓库:`/Users/shmilyvidian/code/superVideoGenarateFactory`,分支 `feat/xborder-relay-video-skill`(已存在)。skill 根:`douyin-video-replication-share-kit-api-ready/douyin-video-replication/`。测试:`python3 -m unittest discover -s douyin-video-replication-share-kit-api-ready/douyin-video-replication/tests -p "test_*.py" -v`。
+仓库:`/Users/shmilyvidian/code/xborder-video-skill`,分支 `feat/xborder-relay-video-skill`(已存在)。skill 根:`xborder-video-replication-share-kit-api-ready/xborder-video-replication/`。测试:`python3 -m unittest discover -s xborder-video-replication-share-kit-api-ready/xborder-video-replication/tests -p "test_*.py" -v`。
 
 ### Task B1: `seedance_submit.py` 改走中转、去 key
 
@@ -577,8 +577,8 @@ Expected: PASS(5 项)。
 - [ ] **Step 5: 提交**
 
 ```bash
-git add douyin-video-replication-share-kit-api-ready/douyin-video-replication/scripts/seedance_submit.py \
-        douyin-video-replication-share-kit-api-ready/douyin-video-replication/tests/test_relay_contract.py
+git add xborder-video-replication-share-kit-api-ready/xborder-video-replication/scripts/seedance_submit.py \
+        xborder-video-replication-share-kit-api-ready/xborder-video-replication/tests/test_relay_contract.py
 git commit -m "feat(skill): seedance_submit 改走 X-Border 中转、去除 ARK_API_KEY
 
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
@@ -794,8 +794,8 @@ Expected: PASS。
 - [ ] **Step 5: 提交**
 
 ```bash
-git add douyin-video-replication-share-kit-api-ready/douyin-video-replication/scripts/xborder_image.py \
-        douyin-video-replication-share-kit-api-ready/douyin-video-replication/tests/test_xborder_image_contract.py
+git add xborder-video-replication-share-kit-api-ready/xborder-video-replication/scripts/xborder_image.py \
+        xborder-video-replication-share-kit-api-ready/xborder-video-replication/tests/test_xborder_image_contract.py
 git commit -m "feat(skill): 新增 xborder_image.py 分镜图走中转(多参考图)
 
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
@@ -805,7 +805,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 **Files:**
 - Delete: `.../setup_seedance_key.sh`、`.../setup_seedance_key_windows.ps1`、`.../secrets/seedance.env.example`、`.../secrets/`
-- Modify: `.../douyin-video-replication/SKILL.md`、`.../references/seedance-api.md`、`.../README.md`、`.../install.sh`、`.../install_windows.bat`、`.../install_windows.ps1`、`.../check_install.sh`、顶层 `README.md`
+- Modify: `.../xborder-video-replication/SKILL.md`、`.../references/seedance-api.md`、`.../README.md`、`.../install.sh`、`.../install_windows.bat`、`.../install_windows.ps1`、`.../check_install.sh`、顶层 `README.md`
 - Modify: `.../tests/test_route_contract.py`(去掉对 ARK key 的断言,加中转断言)
 
 **Interfaces:**
@@ -826,7 +826,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
         self.assertFalse((kit_root / "setup_seedance_key.sh").exists())
         self.assertFalse((kit_root / "secrets").exists())
 ```
-(`SKILL_ROOT.parents[0]` = `douyin-video-replication` 上一级 = share-kit 根;若层级不符按实际调整为 `SKILL_ROOT.parent`。)
+(`SKILL_ROOT.parents[0]` = `xborder-video-replication` 上一级 = share-kit 根;若层级不符按实际调整为 `SKILL_ROOT.parent`。)
 
 - [ ] **Step 2: 跑测试确认失败**
 
@@ -835,7 +835,7 @@ Expected: FAIL(仍存在 setup 脚本 / ARK_API_KEY / 未引用 xborder_image.py
 
 - [ ] **Step 3: 删文件**
 
-Run(在 share-kit 根 `douyin-video-replication-share-kit-api-ready`):
+Run(在 share-kit 根 `xborder-video-replication-share-kit-api-ready`):
 ```bash
 git rm setup_seedance_key.sh setup_seedance_key_windows.ps1 secrets/seedance.env.example
 rmdir secrets 2>/dev/null || true
@@ -859,7 +859,7 @@ Expected: 全绿(含既有 `test_seedance_audio_contract.py` / `test_prompt_imag
 - [ ] **Step 6: 提交**
 
 ```bash
-git add -A douyin-video-replication-share-kit-api-ready README.md
+git add -A xborder-video-replication-share-kit-api-ready README.md
 git commit -m "refactor(skill): 删除 ARK key 配置路径,文档/install/测试改为 X-Border 中转
 
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
@@ -869,7 +869,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ### Task C1: 用 `registerSkillFromGitHub` 注册 skill(运行时操作)
 
-**Files:** 无代码改动(除非注册需补管理脚本)。依赖:`superVideoGenarateFactory` 已推到 GitHub 且含最新中转版 skill;操作者 userId 在 `MARKET_ADMIN_USER_IDS`。
+**Files:** 无代码改动(除非注册需补管理脚本)。依赖:`xborder-video-skill` 已推到 GitHub 且含最新中转版 skill;操作者 userId 在 `MARKET_ADMIN_USER_IDS`。
 
 - [ ] **Step 1: 推分支 / 合并到可注册的 ref**
 
@@ -881,7 +881,7 @@ Run(skill 根):`git push -u origin feat/xborder-relay-video-skill`(或合并到 
 
 - [ ] **Step 3: 调 `registerSkillFromGitHub` 注册**
 
-通过 X-Border 市场管理入口(系统设置 → `/settings/market-management`,developer-only)或直接调 admin oRPC `market.registerSkillFromGitHub`,入参指向 `superVideoGenarateFactory` 仓库中 `douyin-video-replication` skill 路径,`source='github'` 快照 zip 成一个 version。
+通过 X-Border 市场管理入口(系统设置 → `/settings/market-management`,developer-only)或直接调 admin oRPC `market.registerSkillFromGitHub`,入参指向 `xborder-video-skill` 仓库中 `xborder-video-replication` skill 路径,`source='github'` 快照 zip 成一个 version。
 - 参考:`packages/api-server/src/services/market-store.ts:188 registerSkillFromGitHub`、`packages/api-server/src/rpc/market.ts`。
 
 - [ ] **Step 4: 验证**

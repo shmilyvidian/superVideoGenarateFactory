@@ -1,12 +1,12 @@
-# douyin-video-replication 走 X-Border 中转改造设计
+# xborder-video-replication 走 X-Border 中转改造设计
 
 - 日期:2026-07-10
 - 状态:设计已与用户确认,待 spec review
-- 涉及仓库:`superVideoGenarateFactory`(skill 本体,主交付)、`X-Border`(n11-server Worker 中转 + 市场注册)
+- 涉及仓库:`xborder-video-skill`(skill 本体,主交付)、`X-Border`(n11-server Worker 中转 + 市场注册)
 
 ## 1. 背景与目标
 
-`douyin-video-replication` 是一个 Codex 短视频生成 skill,当前:
+`xborder-video-replication` 是一个 Codex 短视频生成 skill,当前:
 
 - **视频**:`scripts/seedance_submit.py` 用用户自己的 `ARK_API_KEY` 直连火山方舟 Seedance 2.0(`https://ark.cn-beijing.volces.com/api/v3/contents/generations/tasks`),key 由用户用 `setup_seedance_key.sh` 写到本机 `~/.codex/secrets/seedance.env`。
 - **分镜图**:SKILL.md 指示 Codex 用**内置 image2** 出九宫格分镜图,没有脚本。
@@ -78,9 +78,9 @@ n11-server Worker
 - 密钥注入:`wrangler secret put ARK_API_KEY`(prod)+ `wrangler secret put ARK_API_KEY --env test`。不写进 `wrangler.jsonc` 的 `vars`。
 - 本地开发:`.dev.vars` 加 `ARK_API_KEY=...`。
 
-### 4.2 skill(superVideoGenarateFactory)
+### 4.2 skill(xborder-video-skill)
 
-根目录:`douyin-video-replication-share-kit-api-ready/`,skill 目录:`.../douyin-video-replication/`。
+根目录:`xborder-video-replication-share-kit-api-ready/`,skill 目录:`.../xborder-video-replication/`。
 
 **B1. 视频脚本** `scripts/seedance_submit.py`:
 

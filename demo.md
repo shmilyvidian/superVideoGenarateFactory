@@ -1,6 +1,6 @@
 链路一：复刻
 ```
-$douyin-video-replication
+$xborder-video-replication
 
 走复刻链路。
 
@@ -18,7 +18,7 @@ $douyin-video-replication
 
 链路二：强 Hook 九宫格生成出片链路
 ```
-$douyin-video-replication
+$xborder-video-replication
 
 走强 Hook 九宫格生成出片链路。
 产品名称：女士百搭通勤包 / 实用斜挎包
@@ -38,7 +38,7 @@ $douyin-video-replication
 
 链路三：九宫格成片直投链路
 ```
-$douyin-video-replication
+$xborder-video-replication
 
 走九宫格成片直投链路。
 

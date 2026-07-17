@@ -1,5 +1,5 @@
 ---
-name: douyin-video-replication
+name: xborder-video-replication
 description: Use this skill for Douyin ecommerce information-feed video workflows, including competitor video replication, strong-Hook nine-grid prompt_image.md to image2 storyboard generation, nine-frame direct Seedance submission, product-fidelity locked storyboards, Seedance 2.0 prompts, and API submission via the X-Border relay (zero key required).
 ---
 

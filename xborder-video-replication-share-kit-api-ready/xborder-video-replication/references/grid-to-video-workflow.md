@@ -39,7 +39,7 @@ The final prompt must:
 When the user asks for API generation, run a dry run first:
 
 ```bash
-python3 $HOME/.codex/skills/douyin-video-replication/scripts/seedance_submit.py \
+python3 $HOME/.codex/skills/xborder-video-replication/scripts/seedance_submit.py \
   --prompt-file outputs/nine_grid_seedance_prompt.md \
   --reference-image inputs/frame_01.png \
   --reference-image inputs/frame_02.png \

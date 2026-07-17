@@ -103,7 +103,7 @@ class RouteContractTest(unittest.TestCase):
         self.assertIn("【通用产品外观硬约束】", prompt)
 
     def test_no_key_setup_leftovers(self):
-        kit_root = SKILL_ROOT.parent  # share-kit 根 (douyin-video-replication-share-kit-api-ready/)
+        kit_root = SKILL_ROOT.parent  # share-kit 根 (xborder-video-replication-share-kit-api-ready/)
         skill_md = (SKILL_ROOT / "SKILL.md").read_text(encoding="utf-8")
         api_md = (SKILL_ROOT / "references" / "seedance-api.md").read_text(encoding="utf-8")
         self.assertNotIn("ARK_API_KEY", skill_md)

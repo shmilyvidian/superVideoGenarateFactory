@@ -1,5 +1,5 @@
 ---
-name: douyin-video-chat
+name: xborder-video-chat
 description: 在 X-Border chat 里生成高转化抖音/TikTok 带货短视频。不是裸喂模型——按强 Hook 九宫格方法论:先写强停滑点分镜脚本、产品保真锁定、用 generateImage 出分镜图、再用 generateSeedanceVideo 出 Seedance 2.0 视频(9:16、原生音频)。零 key,经 X-Border 中转。用于「用这张商品图出个带货视频/做条抖音带货视频/强Hook短视频/九宫格出片」这类请求。
 ---
 
