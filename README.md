@@ -8,6 +8,8 @@
 2. **强 Hook 九宫格生成出片链路**：输入商品信息、卖点、目标人群和产品图，Codex 根据 `prompt_image.md` 生成强 Hook 九宫格脚本，再逐帧调用 `scripts/xborder_image.py`（X-Border 中转，零 key）生成 9 帧分镜图，最后调用 Seedance 2.0 出片。
 3. **九宫格成片直投链路**：你已经有 9 帧分镜图和 9 段提示词时，Codex 跳过脚本和 image2，直接整理 Seedance 2.0 提示词并出片。
 
+> **另有 chat 版 skill**：`chat-skill/xborder-video-chat/` 是 lobehub-xb / XBorder AI **chat 版**带货视频 skill（chat agent 调 MCP 工具，非 Codex 脚本），并支持**电商平台维度**——按 Temu / Noon / Amazon / Shein / Mercado / N11 切换语言、合规、比例、卖点（默认档 = 抖音/TikTok，行为与原来一致，零回归）。详见 [`chat-skill/README.md`](chat-skill/README.md)。
+
 ## 目录结构
 
 ```text
@@ -16,6 +18,9 @@
 ├── prompt_image.md
 ├── docs/
 │   └── codex-video-skill-usage.md
+├── chat-skill/                         # chat 版 skill（MCP 工具，含电商平台维度）
+│   ├── README.md
+│   └── xborder-video-chat/
 └── xborder-video-replication-share-kit-api-ready/
     ├── README.md
     ├── install.sh
